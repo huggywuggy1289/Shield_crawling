@@ -38,7 +38,7 @@ int main() {
     // 패킷 캡처 및 처리 루프
     pcap_loop(handle, -1, packetHandler, NULL);
 
-    // 핸들 닫기!
+    // 핸들 닫긔
     pcap_close(handle);
     return 0;
 }
