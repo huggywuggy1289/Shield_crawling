@@ -40,6 +40,8 @@ def scrape_urls(url, depth=5, timeout_seconds=15):
 
     # 재귀적 웹페이지 스크래핑(현재 url, 현재 깊이)
     def recursive_scrape(current_url, current_depth):
+        # (바깥쪽 함수의 변수 사용을 위해 nonlocal처리가 가능하긴 한데 지움)
+
         # 만약 현재 깊이가 지정 깊이보다 크거나 전체시간-현재시간 값이 지정 시간보다 크다면(지정시간=현재시간이여야함)
         if current_depth > depth or time.time() - start_time >= timeout_seconds:
             # 재귀 호출 종료문으로 리턴값을 아무것도 반환안한다.
@@ -56,6 +58,7 @@ def scrape_urls(url, depth=5, timeout_seconds=15):
                 recursive_scrape(absolute_link, current_depth + 1)
     
     recursive_scrape(url, 1)
+    return scraped_urls
 
 # 스크래핑할 사이트의 URL
 base_url = 'https://linkall1.online/'
