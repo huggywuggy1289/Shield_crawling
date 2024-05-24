@@ -63,6 +63,11 @@ base_url = 'https://linkall1.online/'
 # 지정된 페이지 수만큼 스크랩
 scrape_urls(base_url, depth=5, timeout_seconds=15)
 
+# 스크래핑된 URL 출력
+print("Scraped URLs:")
+for url in scraped_urls:
+    print(url)
+
 @app.route('/')
 def index():
     return render_template('index.html', urls=scraped_urls)
