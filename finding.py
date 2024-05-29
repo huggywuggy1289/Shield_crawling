@@ -63,13 +63,13 @@ for url in scraped_urls:
 
 print("----------------------------------------------------------------------------------------------")
 # 핵심 단어를 추출합니다.
-for keyword in words:
-     if keyword in gambler_keywords:
-          print(keyword)
-     if keyword in webtoon_keywords:
-          print(keyword)
-     if keyword in obscence_keywords:
-          print(keyword)
+# for keyword in words:
+#      if keyword in gambler_keywords:
+#           print(keyword)
+#      if keyword in webtoon_keywords:
+#           print(keyword)
+#      if keyword in obscence_keywords:
+#           print(keyword)
 # print("----------------------------------------------------------------------------------------------")
 #추출된 모든 단어 중 형태소 제거 후 출력
 # for word in words:
@@ -82,22 +82,6 @@ for url in failed_urls:
     print(url)
 
 # 출력값/ 최종출력값:
-# URL: https://linkall1.online/bbs/board.php?bo_table=adult contains malicious keyword: 성인--성인물
-# 정상
-# 정상
-# URL: https://linkall1.online/bbs/board.php?bo_table=drama contains malicious keyword: 드라마--웹툰
-# 정상
-# 정상
-# 정상
-# URL: https://linkall1.online/bbs/board.php?bo_table=sports contains malicious keyword: 스포츠중계--도박
-# 정상
-# URL: https://linkall1.online/bbs/board.php?bo_table=torrent contains malicious keyword: 토렌트--도박
-# 정상
-# 정상
-# URL: https://linkall1.online/bbs/board.php?bo_table=webtoon contains malicious keyword: 웹툰--웹툰
-# 정상
-# Error fetching https://linkall1.online/bbs/link.php?bo_table=torrent&wr_id=36&no=1: ('Connection aborted.', ConnectionResetError(10054, '현재 연결은 원격 호스트에 의해 강
-# 제로 끊겼습니다', None, 10054, None))
 # Failed URLs:
 # https://publang.korean.go.kr/report/reportList.do
 # https://cyberbureau.police.go.kr
