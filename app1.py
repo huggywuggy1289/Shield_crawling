@@ -61,7 +61,10 @@ def scrape_urls(url, depth=5, timeout_seconds=15):
     return scraped_urls
 
 # 스크래핑할 사이트의 URL
-base_url = 'https://linkall1.online/'
+base_url = 'https://xn--9y2boqm71a68i.org/'
+# 'https://lkg1.com/' >> 거부
+# 'https://jusowd.com/' >> 거부
+# 'https://linkall1.online/'
 
 # 지정된 페이지 수만큼 스크랩
 scrape_urls(base_url, depth=5, timeout_seconds=15)
