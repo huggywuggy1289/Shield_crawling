@@ -1,0 +1,42 @@
+# Ignore SQLite database
+db.sqlite3
+
+# Ignore classify.py (if you don't want to track it)
+classify.py
+
+# Python specific ignores
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+*.so
+
+# Django specific ignores
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+media
+
+# Scrapy specific ignores
+scrapy.cfg
+
+# Ignore virtual environment directory
+venv/
+env/
