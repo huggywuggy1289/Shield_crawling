@@ -2,9 +2,12 @@ import os
 import subprocess
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.utils import timezone
+from datetime import timedelta
 from .forms import URLForm
 from classify.models import Host, WordCount
-from classify import classify
+from classify.classify import classify_site, get_top10_keywords, update_classification_in_db  # 수정된 부분
+
 
 def run_spider(url):
     env = os.environ.copy()
@@ -21,22 +24,36 @@ def run_spider(url):
                                env=env)
     process.wait()
 
+
 def process_url(request):
     if request.method == 'POST':
         form = URLForm(request.POST)
         if form.is_valid():
             url = form.cleaned_data['url']
-            existing_host = Host.objects.filter(host=url).first()
-            if existing_host and existing_host.classification:
-                classification = existing_host.classification
+            host_instance, created = Host.objects.get_or_create(host=url)
+            should_classify = False
+
+            if created:
+                host_instance.create_time = timezone.now()
+                should_classify = True
             else:
+                time_difference = timezone.now() - host_instance.last_check_time
+                if time_difference.days >= 7:
+                    should_classify = True
+
+            if should_classify:
                 run_spider(url)
-                # 스크래핑 후 데이터베이스에 기록이 업데이트되었는지 확인
-                host, created = Host.objects.get_or_create(host=url)
-                top_10_keywords = classify.get_top10_keywords(host)
-                classification = classify.classify_site(top_10_keywords)
-                host.classification = classification
-                host.save()
+                top_10_keywords = get_top10_keywords(host_instance)
+                if not top_10_keywords:
+                    classification = "접속 불가 또는 존재하지않음"
+                else:
+                    classification = classify_site(top_10_keywords)
+                host_instance.classification = classification
+                host_instance.last_check_time = timezone.now()
+                host_instance.save()
+            else:
+                classification = host_instance.classification
+
             return JsonResponse({"status": "success", "classification": classification}, json_dumps_params={'ensure_ascii': False})
     else:
         form = URLForm()
