@@ -5,11 +5,9 @@
 
 import scrapy
 
-
 class GetWordsItem(scrapy.Item):
     host = scrapy.Field()
-    redirect = scrapy.Field()
-    words = scrapy.Field()
-    count = scrapy.Field()
+    redirect_url = scrapy.Field()
+    full_sentence = scrapy.Field()
 
 

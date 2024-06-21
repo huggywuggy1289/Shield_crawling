@@ -1,23 +1,21 @@
-import pytesseract
-import re
 import scrapy
-from io import BytesIO
-from PIL import Image, ImageSequence
+from scrapy.selector import Selector  # 추가
+from get_words.items import GetWordsItem
 from scrapy.http import Request
 from urllib.parse import urljoin
-from collections import Counter
-from scrapy.selector import Selector
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+import pytesseract
+import re
+from io import BytesIO
+from PIL import Image, ImageSequence
 import os
-from get_words.items import GetWordsItem
 
 class GetwordsSpider(scrapy.Spider):
     name = "getwords"
-
 
     def __init__(self, start_url=None, *args, **kwargs):
         super(GetwordsSpider, self).__init__(*args, **kwargs)
@@ -27,15 +25,8 @@ class GetwordsSpider(scrapy.Spider):
         pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
         os.environ['TESSDATA_PREFIX'] = '/opt/homebrew/opt/tesseract/share/tessdata/'
 
-        # 윈도우용 테서렉트 경로
-        # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
-    def start_requests(self):
-        for url in self.start_urls:
-            yield scrapy.Request(url=url, callback=self.parse, errback=self.errback, dont_filter=True, meta={'original_url': url})
-
     def parse(self, response):
-        original_url = response.meta.get('original_url', response.url)
+        original_url = self.start_urls[0]
         redirected_url = response.url
 
         texts = self.extract_with_scrapy(response)
@@ -50,15 +41,12 @@ class GetwordsSpider(scrapy.Spider):
             if res and 'gettext' in res.meta:
                 texts.extend(res.meta['gettext'])
 
-        count_words = self.extract_words_count(texts)
-
-        for word, count in count_words.items():
-            item = GetWordsItem()
-            item['host'] = original_url
-            item['redirect'] = redirected_url if redirected_url != original_url else None
-            item['words'] = word
-            item['count'] = count
-            yield item
+        full_sentence = ' '.join(texts)
+        item = GetWordsItem()
+        item['host'] = original_url
+        item['redirect_url'] = redirected_url if redirected_url != original_url else None
+        item['full_sentence'] = full_sentence
+        yield item
 
     def extract_with_selenium(self, response):
         try:
@@ -137,9 +125,8 @@ class GetwordsSpider(scrapy.Spider):
                     for word, count in count_words.items():
                         item = GetWordsItem()
                         item['host'] = original_url
-                        item['redirect'] = redirected_url if redirected_url != original_url else None
-                        item['words'] = word
-                        item['count'] = count
+                        item['redirect_url'] = redirected_url if redirected_url != original_url else None
+                        item['full_sentence'] = ' '.join(gettext)
                         yield item
         except Exception as e:
             return
@@ -157,15 +144,3 @@ class GetwordsSpider(scrapy.Spider):
 
     def extract_words_count(self, words):
         return dict(Counter(words))
-
-    def errback(self, failure):
-        original_url = failure.request.meta['original_url']
-        self.save_failed_url(original_url)
-
-    def save_failed_url(self, url):
-        item = GetWordsItem()
-        item['host'] = url
-        item['redirect'] = None
-        item['words'] = None
-        item['count'] = None
-        self.crawler.engine.scraper.itemproc.process_item(item, self)

@@ -63,7 +63,7 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'get_words.pipelines.GetWordsPipeline': 300,
+    'get_words.pipelines.NewGetWordsPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
