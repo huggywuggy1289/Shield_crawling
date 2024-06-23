@@ -11,6 +11,7 @@ from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_
 from asgiref.sync import sync_to_async
 from django.urls import reverse_lazy
 from django.views.generic.edit import FormView
+import asyncio
 
 
 def run_spider(url):
@@ -56,6 +57,10 @@ async def process_url(request):
                 classification = await final_classification(host_instance)
                 host_instance.classification = classification
                 host_instance.last_check_time = timezone.now()
+                # 여기서 redirect_url을 갱신합니다.
+                redirect_url = await sync_to_async(get_redirect_url)(host_instance.host)
+                if redirect_url:
+                    host_instance.redirect = redirect_url
                 await sync_to_async(host_instance.save)()
             else:
                 classification = host_instance.classification
@@ -98,3 +103,14 @@ class WhitelistView(FormView):
     def form_valid(self, form):
         form.save()
         return super().form_valid(form)
+
+
+def get_redirect_url(host):
+    # 이 함수는 host에 해당하는 리다이렉트 URL을 반환하는 함수입니다.
+    # 구체적인 구현은 필요에 따라 다를 수 있습니다.
+    # 예시:
+    try:
+        host_instance = Hosts.objects.get(host=host)
+        return host_instance.redirect
+    except Hosts.DoesNotExist:
+        return None

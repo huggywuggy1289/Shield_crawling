@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL 크롤링</title>
+</head>
+<body>
+    <h1>URL 크롤링</h1>
+    <form method="post" action="{% url 'start_crawl' %}">
+        {% csrf_token %}
+        <button type="submit">URL 크롤링하기</button>
+    </form>
+    <form method="post" action="{% url 'classify_urls' %}">
+        {% csrf_token %}
+        <button type="submit">URL 분류하기</button>
+    </form>
+</body>
+</html>

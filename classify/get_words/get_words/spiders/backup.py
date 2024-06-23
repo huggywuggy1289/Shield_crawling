@@ -16,26 +16,52 @@ import os
 from collections import Counter
 
 class GetwordsSpider(scrapy.Spider):
-    name = "getwords"
+    name = "getwords22"
 
     def __init__(self, start_url=None, *args, **kwargs):
         super(GetwordsSpider, self).__init__(*args, **kwargs)
         self.start_urls = [start_url]
+
+        # Mac용 Tesseract 경로 설정
         pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
         os.environ['TESSDATA_PREFIX'] = '/opt/homebrew/opt/tesseract/share/tessdata/'
 
+
+    def start_requests(self):
+        for url in self.start_urls:
+            yield self.make_request(url)
+
+    def make_request(self, url):
+        if self.proxies:
+            proxy = self.proxies[self.proxy_index]
+            self.logger.info(f"Using proxy: {proxy}")
+            return Request(url, callback=self.parse, errback=self.errback, meta={'proxy': f"http://{proxy}", 'original_url': url}, dont_filter=True)
+        else:
+            self.logger.error("No proxies available.")
+            return Request(url, callback=self.parse, errback=self.errback, meta={'original_url': url}, dont_filter=True)
+
     def parse(self, response):
-        original_url = self.start_urls[0]
+        original_url = response.meta['original_url']
         redirected_url = response.url
 
-        texts = self.extract_with_scrapy(response)
-        total_words = set(texts)
+        if response.status == 403:
+            self.logger.warning(f"403 Forbidden response for {original_url}. Switching to Selenium.")
+            texts = self.extract_with_selenium(original_url)
+        else:
+            try:
+                texts = self.extract_with_scrapy(response)
+            except Exception as e:
+                self.logger.error(f"Scrapy extraction failed: {e}")
+                texts = []
 
-        if len(total_words) < 100:
-            texts.extend(self.extract_with_selenium(response.url))
+            if len(texts) < 100:
+                texts.extend(self.extract_with_selenium(original_url))
 
-        if len(total_words) < 100:
-            texts.extend(self.extract_with_proxies(response.url))
+        image_texts = list(self.extract_in_image(response, original_url))
+        for future in image_texts:
+            res = yield future
+            if res and 'gettext' in res.meta:
+                texts.extend(res.meta['gettext'])
 
         full_sentence = ' '.join(texts)
         item = GetWordsItem()
@@ -43,13 +69,6 @@ class GetwordsSpider(scrapy.Spider):
         item['redirect_url'] = redirected_url if redirected_url != original_url else None
         item['full_sentence'] = full_sentence
         yield item
-
-    def extract_with_scrapy(self, response):
-        cleaned_html = re.sub(r'<(script|style).*?>.*?</\1>', '', response.text, flags=re.DOTALL)
-        selector = Selector(text=cleaned_html)
-        texts = selector.css('body *::text').getall()
-        cleaned_texts = [word for text in texts for word in self.clean_text(text)]
-        return cleaned_texts
 
     def extract_with_selenium(self, url):
         try:
@@ -74,90 +93,18 @@ class GetwordsSpider(scrapy.Spider):
             return combined_list
 
         except Exception as e:
-            self.logger.error(f"Error extracting with Selenium: {e}")
+            self.logger.error(f"Selenium extraction failed: {e}")
             return []
 
         finally:
             driver.quit()
 
-    def extract_with_proxies(self, url):
-        proxy_list = [
-            '84.252.73.132:4444',
-            '62.236.76.83:8085',
-            '91.92.155.207:3128',
-            '72.10.164.178:25371',
-            '65.109.179.27:80',
-            '65.109.189.49:80',
-            '125.77.25.178:8090',
-            '34.148.178.57:4444',
-            '64.227.4.244:8888',
-            '67.43.236.19:3397',
-            '67.43.236.20:31979',
-            '125.77.25.177:8080',
-            '185.105.91.62:4444',
-            '51.158.169.52:29976',
-            '47.56.110.204:8989',
-            '91.107.147.205:80',
-            '139.162.78.109:8080',
-            '111.160.204.146:9091',
-            '185.222.115.104:31280',
-            '188.132.209.245:80',
-            '67.43.227.226:32847',
-            '20.235.159.154:80',
-            '135.181.154.225:80',
-            '72.10.164.178:5313',
-            '51.195.40.90:80',
-            '221.140.235.236:5002',
-            '152.26.229.86:9443',
-            '72.10.160.171:8465',
-            '35.185.196.38:3128',
-            '203.57.51.53:80',
-            '103.86.109.38:80',
-            '51.89.14.70:80',
-            '51.254.78.223:80',
-            '12.186.205.122:80',
-            '154.85.58.149:80',
-            '103.49.202.252:80',
-            '185.105.89.249:4444',
-            '79.174.12.190:80',
-            '103.198.26.22:80',
-            '34.23.45.223:80',
-            '72.10.160.90:21403',
-            '203.89.8.107:80',
-            '123.30.154.171:7777'
-        ]
-        for proxy in proxy_list:
-            try:
-                options = Options()
-                options.add_argument(f'--proxy-server={proxy}')
-                options.add_argument("headless")
-                driver = webdriver.Chrome(options=options)
-                driver.get(url)
-                WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
-
-                all_tags = driver.find_elements(By.XPATH, '//*[@content]')
-                contents = [tag.get_attribute("content") for tag in all_tags]
-                contents_words = []
-                for content in contents:
-                    content_word = re.findall(r'[\uAC00-\uD7A3]+', content)
-                    contents_words.extend(content_word)
-
-                body_element = driver.find_element(By.TAG_NAME, 'body')
-                body_text = body_element.text
-                body_words = re.findall(r'\b\w+\b', body_text)
-                combined_list = body_words + contents_words
-
-                if len(combined_list) >= 10:
-                    return combined_list
-
-            except Exception as e:
-                self.logger.error(f"Proxy {proxy} failed: {e}")
-                continue
-
-            finally:
-                driver.quit()
-
-        return []
+    def extract_with_scrapy(self, response):
+        cleaned_html = re.sub(r'<(script|style).*?>.*?</\1>', '', response.text, flags=re.DOTALL)
+        selector = Selector(text=cleaned_html)
+        texts = selector.css('body *::text').getall()
+        cleaned_texts = [word for text in texts for word in self.clean_text(text)]
+        return cleaned_texts
 
     def clean_text(self, text):
         words = re.findall(r'\b\w+\b', text)
@@ -172,7 +119,7 @@ class GetwordsSpider(scrapy.Spider):
 
     def parse_image(self, response):
         img_url = response.meta['img_url']
-        original_url = response.meta['original_url']
+        original_url = response.meta.get('original_url', self.start_urls[0])
         redirected_url = response.url
 
         try:
@@ -204,8 +151,7 @@ class GetwordsSpider(scrapy.Spider):
                         item['full_sentence'] = ' '.join(gettext)
                         yield item
         except Exception as e:
-            self.logger.error(f"Error parsing image: {e}")
-            return
+            self.logger.error(f"Image parsing failed: {e}")
 
     def process_text(self, text):
         text = re.sub(r'\b[ㄱ-ㅎㅏ-ㅣ]\b', '', text)
@@ -220,3 +166,21 @@ class GetwordsSpider(scrapy.Spider):
 
     def extract_words_count(self, words):
         return dict(Counter(words))
+
+    def errback(self, failure):
+        original_url = failure.request.meta.get('original_url', self.start_urls[0])
+        self.logger.error(f"Request failed for {original_url}: {failure.value}")
+        self.proxy_index += 1
+        if self.proxy_index < len(self.proxies):
+            self.logger.info(f"Switching to next proxy: {self.proxies[self.proxy_index]}")
+            yield self.make_request(original_url)
+        else:
+            self.logger.error(f"All proxies failed for {original_url}")
+            self.save_failed_url(original_url)
+
+    def save_failed_url(self, url):
+        item = GetWordsItem()
+        item['host'] = url
+        item['redirect_url'] = None
+        item['full_sentence'] = ''
+        self.crawler.engine.scraper.itemproc.process_item(item, self)

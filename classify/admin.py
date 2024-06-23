@@ -11,7 +11,7 @@ class FullSentenceInline(admin.TabularInline):
 
 class HostAdmin(admin.ModelAdmin):
     inlines = [WordCountInline, FullSentenceInline]
-    list_display = ('host', 'classification', 'create_time', 'last_check_time')
+    list_display = ('host', 'redirect', 'classification', 'create_time', 'last_check_time')
 
 class NormalAdmin(admin.ModelAdmin):
     list_display = ('id', 'word')
