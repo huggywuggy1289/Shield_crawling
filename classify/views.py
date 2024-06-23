@@ -4,12 +4,15 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
-from .forms import URLForm
-from classify.models import Host
-from classify.classify import analyze_and_store_full_sentence, final_classification
+from .forms import URLForm, RegisterForm, WhitelistForm
+from classify.models import Hosts, Whitelist
+from classify.classify import final_classification
+from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_category_tables
 from asgiref.sync import sync_to_async
+from django.urls import reverse_lazy
+from django.views.generic.edit import FormView
 
-# 스크래피를 실행하여 URL에서 단어를 추출하는 함수
+
 def run_spider(url):
     env = os.environ.copy()
     env['DJANGO_SETTINGS_MODULE'] = 'config.settings'
@@ -24,40 +27,74 @@ def run_spider(url):
                                env=env)
     process.wait()
 
-# URL을 처리하고 분류 결과를 반환하는 함수
+
 async def process_url(request):
     if request.method == 'POST':
         form = URLForm(request.POST)
         if form.is_valid():
             url = form.cleaned_data['url']
-            host_instance, created = await Host.objects.aget_or_create(host=url)
+
+            # 화이트리스트 체크
+            if await sync_to_async(Whitelist.objects.filter(url=url).exists)():
+                return JsonResponse({"status": "success", "classification": "정상"},
+                                    json_dumps_params={'ensure_ascii': False})
+
+            host_instance, created = await Hosts.objects.aget_or_create(host=url)
             should_classify = False
 
-            # 새로 생성된 경우 또는 마지막 검사 시간이 없는 경우
             if created or host_instance.last_check_time is None:
                 host_instance.create_time = timezone.now()
                 should_classify = True
             else:
-                # 마지막 검사로부터 7일이 지난 경우
                 time_difference = timezone.now() - host_instance.last_check_time
                 if time_difference.days >= 7:
                     should_classify = True
 
             if should_classify:
-                # 스크래피를 실행하여 단어를 추출
                 run_spider(url)
-                # 추출된 단어를 분석하고 저장
                 await analyze_and_store_full_sentence(host_instance)
-                # 최종 분류를 결정
                 classification = await final_classification(host_instance)
-                # 분류 결과와 마지막 검사 시간을 업데이트
                 host_instance.classification = classification
                 host_instance.last_check_time = timezone.now()
                 await sync_to_async(host_instance.save)()
             else:
                 classification = host_instance.classification
 
-            return JsonResponse({"status": "success", "classification": classification}, json_dumps_params={'ensure_ascii': False})
+            return JsonResponse({"status": "success", "classification": classification},
+                                json_dumps_params={'ensure_ascii': False})
     else:
         form = URLForm()
     return render(request, 'classify/url_form.html', {'form': form})
+
+
+async def register(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            url = form.cleaned_data['url']
+            category = form.cleaned_data['category']
+            host_instance, created = await Hosts.objects.aget_or_create(host=url)
+            host_instance.classification = category
+            host_instance.create_time = timezone.now()
+            host_instance.last_check_time = timezone.now()
+            await sync_to_async(host_instance.save)()
+
+            run_spider(url)
+            await analyze_and_store_full_sentence(host_instance)
+            await save_keywords_to_category_tables()
+
+            return JsonResponse({"status": "success", "message": "URL registered and keywords saved successfully"},
+                                json_dumps_params={'ensure_ascii': False})
+    else:
+        form = RegisterForm()
+    return render(request, 'classify/register.html', {'form': form})
+
+
+class WhitelistView(FormView):
+    template_name = 'classify/whitelist.html'
+    form_class = WhitelistForm
+    success_url = reverse_lazy('whitelist')
+
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)

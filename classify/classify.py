@@ -1,6 +1,6 @@
 import openai
 import logging
-from classify.models import WordCount, FullSentence, Host
+from classify.models import WordCount, FullSentence, Hosts, Normal, Casino, Adult, Copyright
 from konlpy.tag import Okt
 from collections import Counter
 from asgiref.sync import sync_to_async
@@ -9,12 +9,12 @@ from asgiref.sync import sync_to_async
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # 'levellevel' 오타 수정
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # OPENAI_API_KEY 설정
-OPENAI_API_KEY = ""
+OPENAI_API_KEY = ""  # 여기에 실제 API 키를 입력하세요.
 openai.api_key = OPENAI_API_KEY
 
 # 형태소 분석기 객체 생성
@@ -27,6 +27,17 @@ async def get_top10_keywords(host):
                                      .filter(host=host)
                                      .order_by('-count')
                                      .values_list('words', flat=True)[:10])
+
+# 미리 정의된 키워드를 가져오는 함수
+async def get_predefined_keywords():
+    logger.debug("Fetching predefined keywords from database")
+    predefined_keywords = {
+        "도박사이트": await sync_to_async(list)(Casino.objects.values_list('word', flat=True)),
+        "성인사이트": await sync_to_async(list)(Adult.objects.values_list('word', flat=True)),
+        "불법저작물배포사이트": await sync_to_async(list)(Copyright.objects.values_list('word', flat=True)),
+        "정상": await sync_to_async(list)(Normal.objects.values_list('word', flat=True)),
+    }
+    return predefined_keywords
 
 # 숫자로 응답받기 위한 함수
 async def classify_with_keywords(question):
@@ -47,8 +58,21 @@ async def classify_site(top_10_keywords):
         logger.warning("No keywords found, returning '접속 불가 또는 존재하지않음'")
         return "접속 불가 또는 존재하지않음"
 
+    predefined_keywords = await get_predefined_keywords()
+    predefined_keywords_sentence = {
+        category: ", ".join(keywords)
+        for category, keywords in predefined_keywords.items()
+    }
     keywords_sentence = ", ".join(top_10_keywords)
-    question = f"웹사이트의 top 10 키워드입니다: {keywords_sentence}. 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해주세요: 도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). 부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼"
+    question = (f"웹사이트의 top 10 키워드입니다: {keywords_sentence}. "
+                f"미리 정의된 카테고리별 키워드는 다음과 같습니다. "
+                f"도박사이트: {predefined_keywords_sentence['도박사이트']}, "
+                f"성인사이트: {predefined_keywords_sentence['성인사이트']}, "
+                f"불법저작물배포사이트: {predefined_keywords_sentence['불법저작물배포사이트']}, "
+                f"정상: {predefined_keywords_sentence['정상']}. "
+                "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘: "
+                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
+                "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼")
 
     return await classify_with_keywords(question)
 
@@ -68,8 +92,21 @@ async def classify_all_keywords(host):
         logger.warning("No keywords found, returning '접속 불가 또는 존재하지않음'")
         return "접속 불가 또는 존재하지않음"
 
+    predefined_keywords = await get_predefined_keywords()
+    predefined_keywords_sentence = {
+        category: ", ".join(keywords)
+        for category, keywords in predefined_keywords.items()
+    }
     keywords_sentence = ", ".join(all_keywords)
-    question = f"웹사이트의 모든 키워드입니다: {keywords_sentence}. 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해주세요: 도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). 부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼"
+    question = (f"웹사이트의 모든 키워드입니다: {keywords_sentence}. "
+                f"미리 정의된 카테고리별 키워드는 다음과 같습니다. "
+                f"도박사이트: {predefined_keywords_sentence['도박사이트']}, "
+                f"성인사이트: {predefined_keywords_sentence['성인사이트']}, "
+                f"불법저작물배포사이트: {predefined_keywords_sentence['불법저작물배포사이트']}, "
+                f"정상: {predefined_keywords_sentence['정상']}. "
+                "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘: "
+                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
+                "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼")
 
     return await classify_with_keywords(question)
 
@@ -80,7 +117,7 @@ async def summarize_full_sentence(host):
         FullSentence.objects.filter(host=host).values_list('full_sentence', flat=True))
 
     combined_sentences = " ".join(full_sentences)
-    question = f"다음 문장을 2-3문장으로 요약해주세요: {combined_sentences}"
+    question = f"다음 문장을 2-3문장으로 요약해줘: {combined_sentences}"
 
     response = await sync_to_async(openai.ChatCompletion.create)(
         model="gpt-3.5-turbo",
@@ -96,47 +133,22 @@ async def summarize_full_sentence(host):
 async def classify_summary(host):
     logger.debug(f"Classifying site using summary for host: {host}")
     summary = await summarize_full_sentence(host)
-    question = f"다음 요약문을 기반으로 웹사이트가 어떤 종류인지 숫자로 판단해주세요: {summary}. 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해주세요: 도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). 부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼"
+    predefined_keywords = await get_predefined_keywords()
+    predefined_keywords_sentence = {
+        category: ", ".join(keywords)
+        for category, keywords in predefined_keywords.items()
+    }
+    question = (f"다음 요약문을 기반으로 웹사이트가 어떤 종류인지 숫자로 판단해줘: {summary}. "
+                f"미리 정의된 카테고리별 키워드는 다음과 같습니다. "
+                f"도박사이트: {predefined_keywords_sentence['도박사이트']}, "
+                f"성인사이트: {predefined_keywords_sentence['성인사이트']}, "
+                f"불법저작물배포사이트: {predefined_keywords_sentence['불법저작물배포사이트']}, "
+                f"정상: {predefined_keywords_sentence['정상']}. "
+                "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘: "
+                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
+                "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼")
 
     return await classify_with_keywords(question)
-
-# FullSentence 테이블의 문장을 분석하고 WordCount 테이블에 저장하는 함수
-async def analyze_and_store_full_sentence(host):
-    logger.debug(f"Analyzing and storing full sentences for host: {host}")
-    full_sentences = await sync_to_async(list)(
-        FullSentence.objects.filter(host=host).values_list('full_sentence', flat=True))
-
-    word_count = Counter()
-    for sentence in full_sentences:
-        words = okt.nouns(sentence)
-        word_count.update(words)
-
-    for word, count in word_count.items():
-        await sync_to_async(WordCount.objects.create)(
-            host=host,
-            words=word,
-            count=count
-        )
-    logger.debug("Finished analyzing and storing full sentences")
-
-# 미리 정의된 키워드를 가져오는 함수
-async def get_predefined_keywords():
-    logger.debug("Fetching predefined keywords from database")
-    predefined_keywords = {
-        "도박사이트": await sync_to_async(list)(
-            WordCount.objects.filter(host__classification="도박사이트").values_list('words', flat=True)
-        ),
-        "성인사이트": await sync_to_async(list)(
-            WordCount.objects.filter(host__classification="성인사이트").values_list('words', flat=True)
-        ),
-        "불법저작물배포사이트": await sync_to_async(list)(
-            WordCount.objects.filter(host__classification="불법저작물배포사이트").values_list('words', flat=True)
-        ),
-        "정상": await sync_to_async(list)(
-            WordCount.objects.filter(host__classification="정상").values_list('words', flat=True)
-        ),
-    }
-    return predefined_keywords
 
 # 유사도를 확인하는 함수
 async def check_similarity_with_predefined(host):

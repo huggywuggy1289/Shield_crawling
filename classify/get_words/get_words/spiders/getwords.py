@@ -1,5 +1,5 @@
 import scrapy
-from scrapy.selector import Selector  # 추가
+from scrapy.selector import Selector
 from get_words.items import GetWordsItem
 from scrapy.http import Request
 from urllib.parse import urljoin
