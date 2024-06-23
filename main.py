@@ -1,10 +1,11 @@
 import sys
 import json
-import threading
 from flask import Flask, request, jsonify, render_template
-from scrapy.crawler import CrawlerProcess
+from multiprocessing import Process, Manager
 from scrapy.utils.project import get_project_settings
-from pasing import KeywordSpider  # 파일 이름에 맞게 수정하세요
+from scrapy.crawler import CrawlerProcess
+from pasing import KeywordSpider
+from scrapy.utils.log import configure_logging
 
 app = Flask(__name__)
 
@@ -20,14 +21,17 @@ def index():
 
 @app.route('/start-crawl', methods=['POST'])
 def start_crawl():
-    url = request.json.get('url')
-    depth = int(request.json.get('depth', 5))
-    results = []
+    data = request.get_json()
+    url = data.get('url')
+    depth = int(data.get('depth', 5))
 
-    # 스크래피 스파이더 실행 스레드 시작
-    thread = threading.Thread(target=run_spider, args=(url, depth, results))
-    thread.start()
-    thread.join()  # 스레드 종료 대기
+    manager = Manager()
+    results = manager.list()  # 공유 리스트 생성
+
+    # Scrapy 스파이더를 별도의 프로세스로 실행
+    p = Process(target=run_spider, args=(url, depth, results))
+    p.start()
+    p.join()
 
     # 크롤링 결과 응답
     formatted_results = [{
@@ -39,17 +43,24 @@ def start_crawl():
 
     return jsonify(formatted_results)
 
-# Scrapy 크롤러를 직접 실행하는 함수
 def run_spider(url, depth, results):
-    process = CrawlerProcess(settings={
-        'FEED_FORMAT': 'json',
-        'FEED_URI': 'output.json'  # 파일을 직접 저장할 경로
-    })
+    configure_logging()
+    process = CrawlerProcess(settings)
     process.crawl(KeywordSpider, start_url=url, depth=depth, results=results)
-    process.start()
+    process.start()  # This will block until the crawling is finished
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
 
 
 

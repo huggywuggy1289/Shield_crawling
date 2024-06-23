@@ -19,9 +19,12 @@ class KeywordSpider(scrapy.Spider):
         self.scraped_data = results
 
     def parse(self, response):
+        current_depth = response.meta.get('depth', self.depth)
         if response.url in self.visited_urls:
             return
         self.visited_urls.add(response.url)
+
+        self.log(f"Visiting: {response.url} at depth {current_depth}")
 
         # BeautifulSoup을 사용하여 HTML 파싱
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -39,18 +42,23 @@ class KeywordSpider(scrapy.Spider):
             if word in gambler_keywords or word in webtoon_keywords or word in obscence_keywords:
                 malicious = 1
                 break
+
         # 최종 json형식의 output값:
         self.scraped_data.append({
             'success': 'y', 
             'id': str(uuid.uuid4()),  # 고유 식별자 생성
-            'url': response.url, # 분석된 링크
-            'malicious': malicious #악성여부 0:정상 1:악성 2: 접속
+            'url': response.url,  # 분석된 링크
+            'malicious': malicious  # 악성 여부 0:정상 1:악성 2: 접속
         })
 
         # 링크 추출
-        if self.depth > 0:
+        if current_depth > 0:
             for link in soup.find_all('a', href=True):
                 absolute_link = urljoin(response.url, link['href'])
                 if absolute_link not in self.visited_urls:
-                    yield scrapy.Request(absolute_link, callback=self.parse, meta={'depth': self.depth - 1})
+                    self.log(f"Found link: {absolute_link} at depth {current_depth - 1}")
+                    yield scrapy.Request(absolute_link, callback=self.parse, meta={'depth': current_depth - 1})
+
+
+
 
