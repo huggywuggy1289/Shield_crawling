@@ -22,22 +22,23 @@ ROBOTSTXT_OBEY = False
 # HTTPERROR_ALLOWED_CODES = [403]
 
 # Downloader middlewares settings
-# DOWNLOADER_MIDDLEWARES = {
+DOWNLOADER_MIDDLEWARES = {
 #     # 'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
-#     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy_user_agents.middlewares.RandomUserAgentMiddleware' : 400,
 #     # 'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
 #     # 'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
-#     'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,  # 우선순위 높이기
-# }
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,  # 우선순위 높이기
+}
 
 # Retry settings
 RETRY_ENABLED = True
-RETRY_TIMES = 5  # 기본값은 2입니다. 필요한 경우 더 낮출 수 있습니다.
+RETRY_TIMES = 1  # 기본값은 2입니다. 필요한 경우 더 낮출 수 있습니다.
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429, 403]  # 필요한 경우 추가 HTTP 코드
 RETRY_PRIORITY_ADJUST = -1  # 낮은 우선순위로 재시도
 
 # Timeout settings
-DOWNLOAD_TIMEOUT = 5  # 기본값은 180초입니다. 필요에 따라 조절하세요.
+DOWNLOAD_TIMEOUT = 2  # 기본값은 180초입니다. 필요에 따라 조절하세요.
 
 # 직접 프록시 리스트 작성
 ROTATING_PROXY_LIST = [

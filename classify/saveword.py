@@ -4,6 +4,8 @@ from konlpy.tag import Okt
 from collections import Counter
 from asgiref.sync import sync_to_async
 import random
+import jpype
+import re
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -16,6 +18,19 @@ logger.addHandler(handler)
 # 형태소 분석기 객체 생성
 okt = Okt()
 
+def is_korean_or_english(word):
+    # 한글 또는 영어가 포함된 단어만 필터링
+    return bool(re.search('[가-힣a-zA-Z]', word))
+
+def extract_korean_and_english_words(sentence):
+    words = []
+    # Okt 형태소 분석을 통해 명사와 다른 품사도 추출
+    okt_pos = okt.pos(sentence)
+    for word, pos in okt_pos:
+        if pos in ['Noun', 'Verb', 'Adjective', 'Alpha']:  # 명사, 동사, 형용사, 영어 단어 추출
+            words.append(word)
+    return words
+
 # FullSentence 테이블의 문장을 분석하고 WordCount 테이블에 저장하는 함수
 async def analyze_and_store_full_sentence(host):
     logger.debug(f"Analyzing and storing full sentences for host: {host}")
@@ -24,8 +39,9 @@ async def analyze_and_store_full_sentence(host):
 
     word_count = Counter()
     for sentence in full_sentences:
-        words = okt.nouns(sentence)
-        word_count.update(words)
+        words = extract_korean_and_english_words(sentence)
+        filtered_words = [word for word in words if is_korean_or_english(word)]  # 한국어 또는 영어 단어만 필터링
+        word_count.update(filtered_words)
 
     for word, count in word_count.items():
         await sync_to_async(WordCount.objects.create)(
@@ -54,9 +70,9 @@ async def save_keywords_to_category_tables():
             WordCount.objects.filter(host__classification=category).values_list('words', flat=True)
         )
         if words:
-            most_common_words = [word for word, _ in Counter(words).most_common(70)] #가장 많은 단어 70개 가져오기
+            most_common_words = [word for word, _ in Counter(words).most_common(70)] # 가장 많은 단어 70개 가져오기
             remaining_words = list(set(words) - set(most_common_words))
-            random_words = random.sample(remaining_words, min(30, len(remaining_words))) #30개 랜덤으로 가져옹니
+            random_words = random.sample(remaining_words, min(30, len(remaining_words))) # 30개 랜덤으로 가져오기
             combined_words = most_common_words + random_words
 
             for word in combined_words:

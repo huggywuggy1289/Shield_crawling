@@ -56,7 +56,7 @@ async def classify_site(top_10_keywords):
     logger.debug(f"Classifying site using top 10 keywords: {top_10_keywords}")
     if not top_10_keywords:
         logger.warning("No keywords found, returning '접속 불가 또는 존재하지않음'")
-        return "접속 불가 또는 존재하지않음"
+        return -1
 
     predefined_keywords = await get_predefined_keywords()
     predefined_keywords_sentence = {
@@ -90,7 +90,7 @@ async def classify_all_keywords(host):
     all_keywords = await get_all_keywords(host)
     if not all_keywords:
         logger.warning("No keywords found, returning '접속 불가 또는 존재하지않음'")
-        return "접속 불가 또는 존재하지않음"
+        return -1
 
     predefined_keywords = await get_predefined_keywords()
     predefined_keywords_sentence = {
@@ -117,7 +117,7 @@ async def summarize_full_sentence(host):
         FullSentence.objects.filter(host=host).values_list('full_sentence', flat=True))
 
     combined_sentences = " ".join(full_sentences)
-    question = f"다음 문장을 2-3문장으로 요약해줘: {combined_sentences}"
+    question = f"다음 문장을 3~4문장으로 요약해줘: {combined_sentences}"
 
     response = await sync_to_async(openai.ChatCompletion.create)(
         model="gpt-3.5-turbo",
@@ -171,10 +171,16 @@ async def check_similarity_with_predefined(host):
     logger.debug(f"Most similar category: {most_similar_category}")
 
     # 유사도 점수가 모두 -1일 경우 처리
-    if all(score == -1 for score in similarity_scores.values()):
+    if all(score == 0 for score in similarity_scores.values()):
         return -1
 
     return most_similar_category
+
+
+
+
+
+
 
 # 최종 분류를 결정하는 함수
 async def final_classification(host):
@@ -187,10 +193,17 @@ async def final_classification(host):
     classifications.append(top_10_classification)
     logger.debug(f"Top 10 keywords classification: {top_10_classification}")
 
+    if top_10_keywords == -1:
+        return -1
+
     # 모든 단어 기반 분류
     all_keywords_classification = await classify_all_keywords(host)
     classifications.append(all_keywords_classification)
     logger.debug(f"All keywords classification: {all_keywords_classification}")
+
+
+    if all_keywords_classification== -1:
+        return -1
 
     # 요약문 기반 분류
     summary_classification = await classify_summary(host)
@@ -199,22 +212,36 @@ async def final_classification(host):
 
     # 유사도 기반 분류
     similarity_classification = await check_similarity_with_predefined(host)
-    classifications.append(similarity_classification)
     logger.debug(f"Similarity classification: {similarity_classification}")
 
-    # 가장 많은 답변을 최종 분류로 결정
-    filtered_classifications = [c for c in classifications if c != -1]  # -1을 제외한 분류 결과 사용
+    # 유사도 분류 결과가 문자열인 경우 숫자로 변환
+    similarity_classification_map = {
+        "도박사이트": 0,
+        "성인사이트": 1,
+        "불법저작물배포사이트": 2,
+        "정상": 3,
+        -1: -1
+    }
+
+    if similarity_classification in similarity_classification_map:
+        classifications.append(similarity_classification_map[similarity_classification])
+    else:
+        classifications.append(-1)
+
+    # 유사도 분류 결과를 제외한 다른 분류 결과는 이미 숫자 형태이므로 그대로 사용
+    filtered_classifications = [int(c) for c in classifications if c != -1]
+
     if not filtered_classifications:
         final_classification_number = -1
     else:
         final_classification_number = Counter(filtered_classifications).most_common(1)[0][0]
 
     classification_map = {
-        "0": "도박사이트",
-        "1": "성인사이트",
-        "2": "불법저작물배포사이트",
-        "3": "정상",
-        "-1": "알 수 없음"
+        0: "도박사이트",
+        1: "성인사이트",
+        2: "불법저작물배포사이트",
+        3: "정상",
+        -1: "알 수 없음"
     }
     final_classification = classification_map.get(final_classification_number, "알 수 없음")
     logger.debug(f"Final classification result: {final_classification}")

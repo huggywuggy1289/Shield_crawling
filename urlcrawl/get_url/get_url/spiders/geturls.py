@@ -20,7 +20,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 # Django를 설정합니다.
 django.setup()
 
-from classify.models import Hosts
+from classify.models import Hosts, Whitelist
 
 class GeturlsSpider(scrapy.Spider):
     name = "geturls"
@@ -28,7 +28,7 @@ class GeturlsSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         super(GeturlsSpider, self).__init__(*args, **kwargs)
-        self.depth_limit = 5  # 기본값으로 초기화
+        self.depth_limit = 3  # 기본값으로 초기화
 
         # start_url을 인자로 받아서 초기화
         self.start_url = kwargs.get('start_url')
@@ -43,7 +43,7 @@ class GeturlsSpider(scrapy.Spider):
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
         spider = super(GeturlsSpider, cls).from_crawler(crawler, *args, **kwargs)
-        spider.depth_limit = crawler.settings.getint('DEPTH_LIMIT', 5)  # 설정에서 깊이 제한 읽기
+        spider.depth_limit = crawler.settings.getint('DEPTH_LIMIT', 2)  # 설정에서 깊이 제한 읽기
         return spider
 
     def start_requests(self):
@@ -51,7 +51,7 @@ class GeturlsSpider(scrapy.Spider):
             url, depth = self.queue.popleft()
             self.log(f"Popped from queue: {url} at depth {depth}", level=logging.INFO)
             if url:  # Check if url is not None
-                yield scrapy.Request(url, meta={'depth': depth}, callback=self.parse)
+                yield scrapy.Request(url, meta={'depth': depth}, callback=self.parse, errback=self.errback)
 
     async def parse(self, response):
         if response.status == 403:
@@ -76,11 +76,17 @@ class GeturlsSpider(scrapy.Spider):
                 continue
 
             # URL을 디코딩하여 잘못된 문자 처리
-            url = unquote(url).strip()
+            url = url.strip()
+
+            host = self.extract_host(url)
+
+            # Whitelist에 있는지 확인
+            if await self.async_host_in_whitelist("https://" + host.strip() + "/"):
+                self.log(f"Host is in whitelist, skipping: {host}", level=logging.INFO)
+                continue
 
             if url not in self.visited_urls:
                 self.visited_urls.add(url)
-                host = self.extract_host(url)
 
                 # 데이터베이스에서 호스트 존재 여부 확인
                 if not await self.async_host_exists_in_db("https://" + host.strip() + "/"):
@@ -89,11 +95,11 @@ class GeturlsSpider(scrapy.Spider):
                         await self.async_store_host_in_db("https://" + host.strip() + "/")
                         self.log(f"Added to database: {host}", level=logging.INFO)
                     self.queue.append((url, current_depth + 1))
-                    self.log(f"Added to queue: {url}", level=logging.INFO)
+                    self.log(f"Added to queue: {url}, depth{current_depth + 1}", level=logging.INFO)
 
-        if self.queue:
-            next_url, next_depth = self.queue[0]
-            yield scrapy.Request(next_url, meta={'depth': next_depth}, callback=self.parse)
+        while self.queue:
+            next_url, next_depth = self.queue.popleft()
+            yield scrapy.Request(next_url, meta={'depth': next_depth}, callback=self.parse, errback=self.errback)
 
     def extract_onclick_urls(self, response):
         # Onclick 이벤트에서 URL 추출
@@ -118,3 +124,13 @@ class GeturlsSpider(scrapy.Spider):
     @sync_to_async
     def async_store_host_in_db(self, host_url):
         Hosts.objects.get_or_create(host=host_url, defaults={'create_time': timezone.now()})
+
+    @sync_to_async
+    def async_host_in_whitelist(self, host_url):
+        return Whitelist.objects.filter(url=host_url).exists()
+
+    def errback(self, failure):
+        self.log(f"Request failed: {failure.request.url}", level=logging.ERROR)
+        while self.queue:
+            next_url, next_depth = self.queue.popleft()
+            yield scrapy.Request(next_url, meta={'depth': next_depth}, callback=self.parse, errback=self.errback)

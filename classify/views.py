@@ -11,6 +11,8 @@ from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_
 from asgiref.sync import sync_to_async
 from django.urls import reverse_lazy
 from django.views.generic.edit import FormView
+from django.contrib import messages
+
 import asyncio
 
 
@@ -95,6 +97,7 @@ async def register(request):
     return render(request, 'classify/register.html', {'form': form})
 
 
+
 class WhitelistView(FormView):
     template_name = 'classify/whitelist.html'
     form_class = WhitelistForm
@@ -102,6 +105,7 @@ class WhitelistView(FormView):
 
     def form_valid(self, form):
         form.save()
+        messages.success(self.request, 'URL has been added to the whitelist successfully.')
         return super().form_valid(form)
 
 

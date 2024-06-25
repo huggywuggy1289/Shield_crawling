@@ -31,7 +31,6 @@ def start_crawl(request):
             # start_url을 인자로 Scrapy 스파이더 실행
             subprocess.Popen(['scrapy', 'crawl', 'geturls', '-a', f'start_url={host.host}'], cwd=scrapy_project_path)
 
-        return redirect('success')  # 크롤링 시작 후 리다이렉트
     return render(request, 'urlcrawl/crawl_url.html')
 
 
@@ -60,7 +59,7 @@ async def classify_host(host_instance):
     should_classify = False
 
     if host_instance.last_check_time is None:
-        host_instance.create_time = timezone.now()
+        host_instance.created_time = timezone.now()
         should_classify = True
     else:
         time_difference = timezone.now() - host_instance.last_check_time
