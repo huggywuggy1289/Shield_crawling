@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-t8t37@+=9o43o+u(j5o!om@^42)^dmyom_c$7(l*j!#l+@qroh
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # 원하는 값으로 설정
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 50000  # 원하는 값으로 설정
 
 
 ALLOWED_HOSTS = []

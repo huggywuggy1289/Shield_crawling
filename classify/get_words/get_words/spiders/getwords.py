@@ -21,6 +21,7 @@ class GetwordsSpider(scrapy.Spider):
     def __init__(self, start_url=None, *args, **kwargs):
         super(GetwordsSpider, self).__init__(*args, **kwargs)
         self.start_urls = [start_url]
+        self.extracted_words = []
         pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
         os.environ['TESSDATA_PREFIX'] = '/opt/homebrew/opt/tesseract/share/tessdata/'
 
@@ -29,15 +30,20 @@ class GetwordsSpider(scrapy.Spider):
         redirected_url = response.url
 
         texts = self.extract_with_scrapy(response)
-        total_words = set(texts)
+        self.extracted_words.extend(texts)
 
-        if len(total_words) < 100:
-            texts.extend(self.extract_with_selenium(response.url))
+        # if len(self.extracted_words) < 100:
+        #     texts = self.extract_with_selenium(response.url)
+        #     self.extracted_words.update(texts)
 
-        if len(total_words) < 100:
-            texts.extend(self.extract_with_proxies(response.url))
+        if len(self.extracted_words) < 1:
+            texts = self.extract_with_proxies(response.url)
+            self.extracted_words.extend(texts)
 
-        full_sentence = ' '.join(texts)
+        if len(self.extracted_words) > 10000:
+            self.extracted_words = list(self.extracted_words)[:10000]
+
+        full_sentence = ' '.join(self.extracted_words)
         item = GetWordsItem()
         item['host'] = original_url
         item['redirect_url'] = redirected_url if redirected_url != original_url else None
@@ -45,7 +51,8 @@ class GetwordsSpider(scrapy.Spider):
         yield item
 
     def extract_with_scrapy(self, response):
-        cleaned_html = re.sub(r'<(script|style).*?>.*?</\1>', '', response.text, flags=re.DOTALL)
+        cleaned_html = re.sub(r'<(script|style|meta|link).*?>.*?</\1>', '', response.text, flags=re.DOTALL)
+        cleaned_html = re.sub(r'<!--.*?-->', '', cleaned_html, flags=re.DOTALL)
         selector = Selector(text=cleaned_html)
         texts = selector.css('body *::text').getall()
         cleaned_texts = [word for text in texts for word in self.clean_text(text)]
@@ -59,6 +66,10 @@ class GetwordsSpider(scrapy.Spider):
             driver.get(url)
             WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
 
+            body_element = driver.find_element(By.TAG_NAME, 'body')
+            body_text = body_element.text
+            body_words = re.findall(r'\b\w+\b', body_text)
+
             all_tags = driver.find_elements(By.XPATH, '//*[@content]')
             contents = [tag.get_attribute("content") for tag in all_tags]
             contents_words = []
@@ -66,11 +77,7 @@ class GetwordsSpider(scrapy.Spider):
                 content_word = re.findall(r'[\uAC00-\uD7A3]+', content)
                 contents_words.extend(content_word)
 
-            body_element = driver.find_element(By.TAG_NAME, 'body')
-            body_text = body_element.text
-            body_words = re.findall(r'\b\w+\b', body_text)
             combined_list = body_words + contents_words
-
             return combined_list
 
         except Exception as e:
@@ -79,6 +86,73 @@ class GetwordsSpider(scrapy.Spider):
 
         finally:
             driver.quit()
+
+    def clean_text(self, text):
+        text = re.sub(r'[^\w\s]', ' ', text)
+        words = re.findall(r'\b\w+\b', text)
+        return words
+
+    def extract_in_image(self, response, original_url):
+        img_urls = response.css('img::attr(src), img::attr(data-original), img::attr(data-src)').extract()
+        for img_url in img_urls:
+            if not img_url.startswith(('http', 'https')):
+                img_url = urljoin(response.url, img_url)
+            yield Request(img_url, callback=self.parse_image, meta={'img_url': img_url, 'original_url': original_url})
+
+    def parse_image(self, response):
+        img_url = response.meta['img_url']
+        original_url = response.meta['original_url']
+        redirected_url = response.url
+
+        try:
+            img = Image.open(BytesIO(response.body))
+            if img.format not in ['JPEG', 'PNG', 'GIF']:
+                return
+
+            min_image_width = 50
+            min_image_height = 50
+            width, height = img.size
+
+            if width > min_image_width and height > min_image_height:
+                if img.format == 'GIF':
+                    frames = ImageSequence.Iterator(img)
+                    for frame in frames:
+                        last_frame = frame
+                    text = pytesseract.image_to_string(last_frame, lang='kor+eng')
+                else:
+                    text = pytesseract.image_to_string(img, lang='kor+eng')
+
+                gettext = self.process_text(text)
+                if gettext:
+                    count_words = self.extract_words_count(gettext)
+
+                    self.extracted_words.update(gettext)
+                    if len(self.extracted_words) > 10000:
+                        self.extracted_words = list(self.extracted_words)[:10000]
+
+                    full_sentence = ' '.join(self.extracted_words)
+                    item = GetWordsItem()
+                    item['host'] = original_url
+                    item['redirect_url'] = redirected_url if redirected_url != original_url else None
+                    item['full_sentence'] = full_sentence
+                    yield item
+        except Exception as e:
+            self.logger.error(f"Error parsing image: {e}")
+            return
+
+    def process_text(self, text):
+        text = re.sub(r'\b[ㄱ-ㅎㅏ-ㅣ]\b', '', text)
+        text = re.sub('[0-9]', '', text)
+        text = re.sub(r'[^\w\s]', ' ', text)
+        text = re.sub(r'\d+', '', text)
+        text = re.sub(r'\s+', ' ', text)
+        word_list = text.strip().split()
+        cleaned_word_list = [re.sub(r'[ㄱ-ㅎㅏ-ㅣ]', '', word) for word in word_list]
+        filtered = [word for word in cleaned_word_list if len(word) > 1]
+        return filtered
+
+    def extract_words_count(self, words):
+        return dict(Counter(words))
 
     def extract_with_proxies(self, url):
         proxy_list = [
@@ -126,97 +200,20 @@ class GetwordsSpider(scrapy.Spider):
             '203.89.8.107:80',
             '123.30.154.171:7777'
         ]
+
         for proxy in proxy_list:
             try:
-                options = Options()
-                options.add_argument(f'--proxy-server={proxy}')
-                options.add_argument("headless")
-                driver = webdriver.Chrome(options=options)
-                driver.get(url)
-                WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
-
-                all_tags = driver.find_elements(By.XPATH, '//*[@content]')
-                contents = [tag.get_attribute("content") for tag in all_tags]
-                contents_words = []
-                for content in contents:
-                    content_word = re.findall(r'[\uAC00-\uD7A3]+', content)
-                    contents_words.extend(content_word)
-
-                body_element = driver.find_element(By.TAG_NAME, 'body')
-                body_text = body_element.text
-                body_words = re.findall(r'\b\w+\b', body_text)
-                combined_list = body_words + contents_words
-
-                if len(combined_list) >= 10:
-                    return combined_list
-
+                # 프록시를 사용하는 새로운 Request 객체 생성
+                request = Request(url=url, callback=self.extract_with_scrapy,
+                                  meta={'proxy': proxy})
+                # Request 객체를 다운로드하고, 결과를 받아 처리
+                texts = self.crawler.engine.download(request, self)
+                if texts and len(texts) > 0:
+                    self.extracted_words.update(texts)
+                    if len(self.extracted_words) > 0:
+                        return self.extracted_words
             except Exception as e:
                 self.logger.error(f"Proxy {proxy} failed: {e}")
                 continue
-
-            finally:
-                driver.quit()
-
         return []
 
-    def clean_text(self, text):
-        words = re.findall(r'\b\w+\b', text)
-        return words
-
-    def extract_in_image(self, response, original_url):
-        img_urls = response.css('img::attr(src), img::attr(data-original), img::attr(data-src)').extract()
-        for img_url in img_urls:
-            if not img_url.startswith(('http', 'https')):
-                img_url = urljoin(response.url, img_url)
-            yield Request(img_url, callback=self.parse_image, meta={'img_url': img_url, 'original_url': original_url})
-
-    def parse_image(self, response):
-        img_url = response.meta['img_url']
-        original_url = response.meta['original_url']
-        redirected_url = response.url
-
-        try:
-            img = Image.open(BytesIO(response.body))
-            if img.format not in ['JPEG', 'PNG', 'GIF']:
-                return
-
-            min_image_width = 50
-            min_image_height = 50
-            width, height = img.size
-
-            if width > min_image_width and height > min_image_height:
-                if img.format == 'GIF':
-                    frames = ImageSequence.Iterator(img)
-                    for frame in frames:
-                        last_frame = frame
-                    text = pytesseract.image_to_string(last_frame, lang='kor+eng')
-                else:
-                    text = pytesseract.image_to_string(img, lang='kor+eng')
-
-                gettext = self.process_text(text)
-                if gettext:
-                    count_words = self.extract_words_count(gettext)
-
-                    for word, count in count_words.items():
-                        item = GetWordsItem()
-                        item['host'] = original_url
-                        item['redirect_url'] = redirected_url if redirected_url != original_url else None
-                        item['full_sentence'] = ' '.join(gettext)
-                        yield item
-        except Exception as e:
-            self.logger.error(f"Error parsing image: {e}")
-            return
-
-    def process_text(self, text):
-        text = re.sub(r'\b[ㄱ-ㅎㅏ-ㅣ]\b', '', text)
-        text = re.sub('[0-9]', '', text)
-        text = re.sub(r'[^\w\s]', '', text)
-        text = re.sub(r'\d+', '', text)
-        text = re.sub(r'\s+', ' ', text)
-        word_list = text.strip().split()
-        cleaned_word_list = [re.sub(r'[ㄱ-ㅎㅏ-ㅣ]', '', word) for word in word_list]
-        filtered = [word for word in cleaned_word_list if len(word) > 1]
-        return filtered
-
-    def extract_words_count(self, words):
-        return dict(Counter(words))

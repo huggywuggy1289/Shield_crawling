@@ -17,10 +17,24 @@ NEWSPIDER_MODULE = "get_url.spiders"
 #USER_AGENT = "get_url (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 32
+
+DOWNLOADER_MIDDLEWARES = {
+    # 'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
+    # 'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,  # 우선순위 높이기
+}
+
+# Retry settings
+RETRY_ENABLED = True
+RETRY_TIMES = 2  # 기본값은 2입니다. 필요한 경우 더 낮출 수 있습니다.
+RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429, 403]  # 필요한 경우 추가 HTTP 코드
+RETRY_PRIORITY_ADJUST = -1  # 낮은 우선순위로 재시도
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay

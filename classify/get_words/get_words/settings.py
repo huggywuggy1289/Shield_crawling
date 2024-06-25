@@ -22,13 +22,13 @@ ROBOTSTXT_OBEY = False
 # HTTPERROR_ALLOWED_CODES = [403]
 
 # Downloader middlewares settings
-DOWNLOADER_MIDDLEWARES = {
-    # 'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    # 'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
-    # 'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
-    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,  # 우선순위 높이기
-}
+# DOWNLOADER_MIDDLEWARES = {
+#     # 'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
+#     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+#     # 'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
+#     # 'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
+#     'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,  # 우선순위 높이기
+# }
 
 # Retry settings
 RETRY_ENABLED = True

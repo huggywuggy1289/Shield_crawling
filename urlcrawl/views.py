@@ -15,26 +15,21 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
+
 def start_crawl(request):
     if request.method == 'POST':
         # classification이 NULL이거나 '정상'이 아닌 호스트들 가져오기
         hosts = Hosts.objects.filter(Q(classification__isnull=True) | ~Q(classification='정상'))
 
-        queue = deque()
-        for host in hosts:
-            queue.append((host.host, 0))
-
         # 큐 상태 로그
-        logger.info(f"Initial queue: {queue}")
+        logger.info(f"Hosts to crawl: {hosts}")
 
-        # 큐를 JSON으로 변환
-        queue_json = json.dumps(list(queue))
+        for host in hosts:
+            # Scrapy 스파이더 실행 경로 설정
+            scrapy_project_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'get_url')
 
-        # Scrapy 스파이더 실행 경로 설정
-        scrapy_project_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'get_url')
-
-        # 큐를 인자로 Scrapy 스파이더 실행
-        subprocess.Popen(['scrapy', 'crawl', 'geturls', '-a', f'queue={queue_json}'], cwd=scrapy_project_path)
+            # start_url을 인자로 Scrapy 스파이더 실행
+            subprocess.Popen(['scrapy', 'crawl', 'geturls', '-a', f'start_url={host.host}'], cwd=scrapy_project_path)
 
         return redirect('success')  # 크롤링 시작 후 리다이렉트
     return render(request, 'urlcrawl/crawl_url.html')
