@@ -14,7 +14,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # OPENAI_API_KEY 설정
-OPENAI_API_KEY = ""  # 여기에 실제 API 키를 입력하세요.
+#OPENAI_API_KEY = ""  # 여기에 실제 API 키를 입력하세요.
 openai.api_key = OPENAI_API_KEY
 
 # 형태소 분석기 객체 생성
