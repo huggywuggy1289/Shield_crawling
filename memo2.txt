@@ -1,0 +1,27 @@
+실행전
+
+pip install django
+pip install scrapy
+pip install openai==0.28 (챗지피티)
+pip install konlpy (형태소 분석)
+pip install jpype1
+pip install pytesseract (이미지분석)
+pip install scrapy-user-agents
+
+#윈도우 테서렉트
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+#맥북 테서렉트
+pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+os.environ['TESSDATA_PREFIX'] = '/opt/homebrew/opt/tesseract/share/tessdata/'
+
+
+
+
+
+
+classify/classify.py 에서
+OPENAI_API_KEY   # 여기에 실제 API 키를 입력하세요.
+설정해야하고
+
+jvm 설정하여야함
