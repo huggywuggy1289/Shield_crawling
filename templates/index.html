@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>메인 화면</h1>
+    <form action="{{ url_for ('result') }}" method="post">
+      <input type="text" name="query" placeholder="키워드 입력" />
+      <button type="submit">검색</button>
+    </form>
+    <hr />
+    <h1>크롤링 url 목록</h1>
+    <ul>
+      {% for url in urls %}
+      <li><a href="{{ url }}">{{ url }}</a></li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>
