@@ -14,7 +14,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # OPENAI_API_KEY 설정
-#OPENAI_API_KEY = ""  # 여기에 실제 API 키를 입력하세요.
+OPENAI_API_KEY = ""  # 여기에 실제 API 키를 입력하세요.
 openai.api_key = OPENAI_API_KEY
 
 # 형태소 분석기 객체 생성
@@ -119,15 +119,21 @@ async def summarize_full_sentence(host):
     combined_sentences = " ".join(full_sentences)
     question = f"다음 문장을 3~4문장으로 요약해줘: {combined_sentences}"
 
-    response = await sync_to_async(openai.ChatCompletion.create)(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "user", "content": question}
-        ]
-    )
-    summary = response.choices[0].message['content'].strip()
-    logger.debug(f"Received summary: {summary}")
-    return summary
+    # OpenAI API 호출 시 예외 처리 추가
+    try:
+        response = await sync_to_async(openai.ChatCompletion.create)(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": question}
+            ]
+        )
+        summary = response.choices[0].message['content'].strip()
+        logger.debug(f"Received summary: {summary}")
+        return summary
+    except openai.error.APIError as e:
+        logger.error(f"OpenAI API error: {e}")
+        return "알 수 없음"
+
 
 # 요약문을 사용하여 사이트 분류
 async def classify_summary(host):
@@ -144,7 +150,10 @@ async def classify_summary(host):
                 f"성인사이트: {predefined_keywords_sentence['성인사이트']}, "
                 f"불법저작물배포사이트: {predefined_keywords_sentence['불법저작물배포사이트']}, "
                 f"정상: {predefined_keywords_sentence['정상']}. "
-                "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘: "
+                "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘"
+                "위 카테고리별들로 많이 나온 단어들을 추출해온건데, 이 요약문이 어느위치에 포함되어있는지 확인해주면 돼."
+                "특히 정상사이트랑 불법저작물배포사이트 는 구별하기 힘드니까 잘 판단해서"
+                "어떤 종류인지 숫자로 판단해주면돼"
                 "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
                 "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼")
 
@@ -188,22 +197,22 @@ async def final_classification(host):
     classifications = []
 
     # Top 10 단어 기반 분류
-    top_10_keywords = await get_top10_keywords(host)
-    top_10_classification = await classify_site(top_10_keywords)
-    classifications.append(top_10_classification)
-    logger.debug(f"Top 10 keywords classification: {top_10_classification}")
+    # top_10_keywords = await get_top10_keywords(host)
+    # top_10_classification = await classify_site(top_10_keywords)
+    # classifications.append(top_10_classification)
+    # logger.debug(f"Top 10 keywords classification: {top_10_classification}")
 
-    if top_10_keywords == -1:
-        return -1
+    # if top_10_keywords == -1:
+    #     return -1
 
     # 모든 단어 기반 분류
     all_keywords_classification = await classify_all_keywords(host)
     classifications.append(all_keywords_classification)
     logger.debug(f"All keywords classification: {all_keywords_classification}")
 
-
-    if all_keywords_classification== -1:
-        return -1
+    #
+    # if all_keywords_classification== -1:
+    #     return -1
 
     # 요약문 기반 분류
     summary_classification = await classify_summary(host)
@@ -220,7 +229,7 @@ async def final_classification(host):
         "성인사이트": 1,
         "불법저작물배포사이트": 2,
         "정상": 3,
-        -1: -1
+        -1: -1,
     }
 
     if similarity_classification in similarity_classification_map:
@@ -229,12 +238,26 @@ async def final_classification(host):
         classifications.append(-1)
 
     # 유사도 분류 결과를 제외한 다른 분류 결과는 이미 숫자 형태이므로 그대로 사용
-    filtered_classifications = [int(c) for c in classifications if c != -1]
+    filtered_classifications = []
+    for c in classifications:
+        if c != -1:
+            try:
+                filtered_classifications.append(int(float(c)))
+            except ValueError:
+                # 숫자로 변환할 수 없는 값은 무시하거나 로그를 남깁니다.
+                print(f"Invalid value for classification: {c}")
+
 
     if not filtered_classifications:
         final_classification_number = -1
+
+
     else:
         final_classification_number = Counter(filtered_classifications).most_common(1)[0][0]
+
+
+    if -1 in classifications:
+        final_classification_number = -1
 
     classification_map = {
         0: "도박사이트",

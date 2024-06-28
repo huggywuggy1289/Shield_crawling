@@ -1,0 +1,57 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 80vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+}
+
+.container {
+    text-align: center;
+    width: 800px; /* 고정 너비로 설정 */
+    padding-top: 16px; /* 페이지 상단 여백 고정 */
+}
+
+h1 {
+    margin: 0;
+    font-size: 85px; /* 제목 크기 고정 */
+    color: #0033cc;
+    padding-bottom: 25px; /* 제목과 하단 텍스트 간의 여백 고정 */
+}
+
+.footer-text {
+    font-size: 14px; /* 하단 텍스트 크기 고정 */
+    color: #666;
+    margin-top: 1px; /* 하단 텍스트와 검색창 간의 여백 고정 */
+    line-height: 20px;
+}
+
+.search-container {
+    margin-top: 40px; /* 검색창 위치 고정 */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.search-bar {
+    width: 400px;
+    padding: 8px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+
+.search-button {
+    padding: 8px 15px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #0033cc;
+    color: white;
+    cursor: pointer;
+}

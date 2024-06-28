@@ -50,7 +50,8 @@ async def classify_urls(request):
         for host in hosts:
             await classify_host(host)
 
-        return redirect('success')
+        await save_keywords_to_category_tables()
+
     return render(request, 'urlcrawl/crawl_url.html')
 
 
@@ -104,3 +105,6 @@ def get_redirect_url(host):
         return host_instance.redirect
     except Hosts.DoesNotExist:
         return None
+
+
+

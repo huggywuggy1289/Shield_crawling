@@ -67,6 +67,8 @@ async def process_url(request):
             else:
                 classification = host_instance.classification
 
+            await save_keywords_to_category_tables()
+
             return JsonResponse({"status": "success", "classification": classification},
                                 json_dumps_params={'ensure_ascii': False})
     else:
