@@ -39,8 +39,7 @@ async def process_url(request):
 
             # 화이트리스트 체크
             if await sync_to_async(Whitelist.objects.filter(url=url).exists)():
-                return JsonResponse({"status": "success", "classification": "정상"},
-                                    json_dumps_params={'ensure_ascii': False})
+                return render(request, 'classify/search.html')
 
             host_instance, created = await Hosts.objects.aget_or_create(host=url)
             should_classify = False
@@ -69,8 +68,7 @@ async def process_url(request):
 
             await save_keywords_to_category_tables()
 
-            return JsonResponse({"status": "success", "classification": classification},
-                                json_dumps_params={'ensure_ascii': False})
+            return render(request, 'classify/search.html')
     else:
         form = URLForm()
     return render(request, 'classify/url_form.html', {'form': form})

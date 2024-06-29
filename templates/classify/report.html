@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Report - PageShield</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'classify/reportStyle.css' %}">
+    <script defer src="{% static 'classify/reportScripts.js' %}"></script>
+</head>
+<body>
+    <header>
+        <div class="logo">PageShield</div>
+    </header>
+    <main>
+        <div class="report-form">
+            <h2>URL 신고하기</h2>
+            <form id="report-form">
+                <label for="reported-url">신고할 URL</label>
+                <input type="text" id="reported-url" name="reported-url" placeholder="URL을 입력하세요.." required>
+
+                <label for="report-tag">신고 태그</label>
+                <select id="report-tag" name="report-tag" required>
+                    <option value="" disabled selected>신고 키워드를 선택하세요..</option>
+                    <option value="무단배포">저작물 무단 배포</option>
+                    <option value="성인물">성인물</option>
+                    <option value="불법도박">불법 도박</option>
+                    <option value="기타">기타</option>
+                </select>
+                <input type="text" id="other-tag" name="other-tag" placeholder="기타 키워드를 입력하세요.." style="display:none; margin-top: 10px;">
+
+                <label for="report-reason">신고 이유</label>
+                <textarea id="report-reason" name="report-reason" rows="4" placeholder="신고 사유를 입력하세요.." required></textarea>
+
+                <button type="submit">신고하기</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

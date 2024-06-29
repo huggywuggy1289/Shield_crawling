@@ -4,6 +4,8 @@ from classify.models import WordCount, FullSentence, Hosts, Normal, Casino, Adul
 from konlpy.tag import Okt
 from collections import Counter
 from asgiref.sync import sync_to_async
+import jpype
+import os
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -16,9 +18,16 @@ logger.addHandler(handler)
 # OPENAI_API_KEY 설정
 OPENAI_API_KEY = ""  # 여기에 실제 API 키를 입력하세요.
 openai.api_key = OPENAI_API_KEY
+# if not jpype.isJVMStarted():
+#     jpype.startJVM(jpype.getDefaultJVMPath(), "-Djava.class.path=/path/to/your/classpath", convertStrings=True)
+
 
 # 형태소 분석기 객체 생성
 okt = Okt()
+if not jpype.isJVMStarted():
+    jvmpath = os.path.join(os.environ['JAVA_HOME'], 'lib/jli/libjli.dylib')
+    jpype.startJVM(jvmpath, "-Djava.class.path={}".format(os.environ['JAVA_HOME']), convertStrings=True)
+
 
 # 상위 10개의 키워드를 가져오는 함수
 async def get_top10_keywords(host):
@@ -155,7 +164,8 @@ async def classify_summary(host):
                 "특히 정상사이트랑 불법저작물배포사이트 는 구별하기 힘드니까 잘 판단해서"
                 "어떤 종류인지 숫자로 판단해주면돼"
                 "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
-                "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼")
+                "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼"
+                )
 
     return await classify_with_keywords(question)
 

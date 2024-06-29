@@ -28,6 +28,7 @@ jvm 설정하여야함
 
 
 
+
 특정 시간마다 작업 진행시키기 위하여
 0 0,4,8,12,16,20 * * * ~/venvs/moni/bin/python  /Users/seo/Desktop/github/seoWeb/manage.py start_crawl_task
 0 2,6,10,14,18,22 * * *~/venvs/moni/bin/python  /Users/seo/Desktop/github/seoWeb/manage.py classify_urls_task
@@ -36,6 +37,7 @@ jvm 설정하여야함
 crontab -e
 한 후에 작성
 
+
 수동으로 실행시킬려면
 
 ~/venvs/moni/bin/python /Users/seo/Desktop/github/seoWeb/manage.py start_crawl_task
@@ -43,5 +45,12 @@ crontab -e
 이런식으로 실행
 
 경로 주의해야함
+
+
+자동화 수정
+pip install django-crontab
+https://velog.io/@cjyooong/Django-crontab-%EC%8A%A4%EC%BC%80%EC%A4%84%EB%9F%AC-%EC%9E%91%EC%84%B1
+
+
 
 

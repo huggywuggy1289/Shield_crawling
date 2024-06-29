@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageShield</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'classify/searchStyle.css' %}">
+    <script defer src="{% static 'classify/searchScripts.js' %}"></script>
+</head>
+<body>
+    <header>
+        <div class="logo">PageShield</div>
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="url을 입력하세요..">
+            <button id="search-button">Search</button>
+            <button class="report-button" id="report-button">url 신고하기</button>
+        </div>
+    </header>
+    <main>
+        <div class="search-results" id="search-results">
+            <!-- 검색 결과 -->
+        </div>
+    </main>
+</body>
+</html>

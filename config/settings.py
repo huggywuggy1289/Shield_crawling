@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'classify',
     'urlcrawl',
+    'django_crontab'
 ]
 
 MIDDLEWARE = [
@@ -107,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-kr'
 
 TIME_ZONE = 'UTC'
 
@@ -132,3 +133,13 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+import os
+from datetime import datetime
+
+CRONJOBS = [
+    ('0 */4 * * *', 'urlcrawl.cron.start_crawl_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_start_crawl_{datetime.now().strftime("%Y-%m-%d")}.log')),
+    ('0 2,6,10,14,18,22 * * *', 'urlcrawl.cron.classify_urls_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_classify_urls_{datetime.now().strftime("%Y-%m-%d")}.log')),
+    ('0 1,3,5,7,9,11,13,15,17,19,21,23 * * *', 'classify.cron.save_keywords_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_save_keywords_{datetime.now().strftime("%Y-%m-%d")}.log'))
+]

@@ -1,0 +1,84 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    overflow-x: hidden;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+header .logo {
+    font-size: 30px;
+    font-weight: bold;
+    color: #0033cc;
+}
+
+main {
+    flex-grow: 1;
+    padding: 20px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.report-form {
+    width: 100%;
+    max-width: 600px;
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.report-form h2 {
+    margin-top: 0;
+}
+
+.report-form label {
+    display: block;
+    margin-top: 10px;
+}
+
+.report-form input, .report-form textarea, .report-form select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.report-form input {
+    height: 35px;
+}
+
+.report-form textarea {
+    resize: none;
+}
+
+.report-form button {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
