@@ -14,7 +14,7 @@
         <div class="footer-text">오늘 등록된 홈페이지 : 총 000000개</div>
         <div class="footer-text">어제 등록된 홈페이지 : 총 000000개</div>
         <div class="search-container">
-            <form method="post" action="{% url 'process_url' %}" id="url-form">
+            <form method="post" action="{% url 'search' %}" id="url-form">
                 {% csrf_token %}
                 <input type="text" class="search-bar" id="search-input" name="url" placeholder="url을 입력하세요..">
                 <button type="submit" class="search-button" id="search-button">Search</button>
@@ -22,4 +22,27 @@
         </div>
     </div>
 </body>
+    <!-- 로딩 중인 경우 보여질 오버레이 -->
+    <div id="loading-overlay" class="loading-overlay">
+        <p>Loading...</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('#url-form');
+            const loadingOverlay = document.querySelector('#loading-overlay');
+
+            form.addEventListener('submit', function() {
+                showLoadingOverlay(); // 검색 요청 전 로딩 화면 표시
+            });
+
+            function showLoadingOverlay() {
+                loadingOverlay.style.display = 'block';
+            }
+
+            function hideLoadingOverlay() {
+                loadingOverlay.style.display = 'none';
+            }
+        });
+    </script>
 </html>

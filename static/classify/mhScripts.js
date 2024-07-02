@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
         this.style.backgroundColor = '#0033cc'; // 버튼 밖으로 커서가 나갔을 때 원래 색상
     });
 
+
+
 //
 //    // 페이지 이동 이벤트
 //    function navigateToSearchPage() {

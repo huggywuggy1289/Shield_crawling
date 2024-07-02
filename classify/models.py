@@ -6,6 +6,7 @@ class Hosts(models.Model):
     classification = models.CharField(max_length=255, null=True, blank=True)
     create_time = models.DateTimeField(auto_now_add=True)
     last_check_time = models.DateTimeField(null=True, blank=True)
+    final = models.CharField(max_length=255)
 
 class WordCount(models.Model):
     host = models.ForeignKey(Hosts, on_delete=models.CASCADE)
@@ -39,10 +40,12 @@ class Whitelist(models.Model):
     url = models.URLField(unique=True)
 
 
-class Final(models.Model):
-    url = models.URLField(unique = True)
 
 class ReportUrl(models.Model):
-    pass
+    url = models.ForeignKey(Hosts, on_delete=models.CASCADE)
+    tag = models.CharField(max_length=255)
+    reason = models.CharField(max_length = 255)
+    create_at = models.DateTimeField(auto_now_add = True)
+
 
 

@@ -3,96 +3,126 @@
 }
 
 body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-    overflow-x: hidden;
 }
 
 header {
+    background-color: #0033cc;
+    color: white;
+    padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
-    padding: 10px 20px;
-    background-color: #fff;
-    border-bottom: 1px solid #ddd;
 }
 
 header .logo {
-    font-size: 30px; /* 고정 크기로 설정 */
+    font-size: 24px;
     font-weight: bold;
-    color: #0033cc;
-    margin-right: 25px; /* 로고와 검색창 사이의 여백 */
+    text-decoration: none;
+    color: white;
 }
 
 header .search-bar {
     display: flex;
     align-items: center;
-    flex-grow: 1;
 }
 
-header .search-bar input {
-    width: 450px; /* 고정 너비 */
-    height: 35px; /* 고정 높이 */
-    padding: 8px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-right: 8px;
+header .search-bar input[type="text"] {
+    width: 300px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-right: 10px;
 }
 
 header .search-bar button {
-    width: 70px; /* 고정 너비 */
-    height: 35px; /* 고정 높이 */
-    font-size: 13px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background-color: #0033cc;
-    color: white;
-    cursor: pointer;
-}
-
-header .search-bar .report-button {
-    width: 150px; /* 넓은 버튼 */
-    height: 35px; /* 고정 높이 */
-    font-size: 13px;
+    padding: 10px 15px;
     background-color: #dc3545;
-    color: #fff;
+    color: white;
     border: none;
-    cursor: pointer;
     border-radius: 5px;
-    margin-left: 5px; /* 좌측에 여백 추가 */
+    cursor: pointer;
+    margin-left: 10px;
 }
 
 main {
-    flex-grow: 1;
+    flex: 1;
     padding: 20px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start; /* 검색 결과가 왼쪽에 붙도록 설정 */
-    align-items: flex-start; /* 검색 결과가 상단에 붙도록 설정 */
 }
 
-.search-results {
-    width: 100%;
-    max-width: 800px;
+.search-results, .report-results {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.search-result, .report-result {
+    background-color: #f9f9f9;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-result p, .report-result p {
+    margin: 0 0 10px;
+}
+
+h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.report-tag, .report-reason, .report-date {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.pagination {
+    text-align: center;
     margin-top: 20px;
 }
 
-.search-result {
-    background-color: #fff;
-    padding: 10px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    text-align: left;
+.pagination .step-links {
+    display: inline-block;
+    padding: 5px;
 }
 
-.search-result:nth-child(odd) {
-    background-color: #f9f9f9;
+.pagination a {
+    color: #0033cc;
+    text-decoration: none;
+    margin: 0 5px;
+}
+
+.pagination .current {
+    font-weight: bold;
+    margin: 0 5px;
+}
+
+/* 로딩 화면 스타일 */
+#loading {
+    display: none; /* 초기에는 숨김 */
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8); /* 반투명한 흰 배경 */
+    z-index: 1000; /* 다른 요소 위에 표시 */
+    text-align: center;
+    padding-top: 20%;
+}
+
+#loading p {
+    font-size: 1.2em;
+    margin-top: 20px;
 }

@@ -11,7 +11,7 @@
     <header>
         <a href="{% url 'url_form' %}" class="logo">PageShield</a>
         <div class="search-bar">
-            <form method="post" action="{% url 'process_url' %}">
+            <form id="search-form" method="get" action="{% url 'search' %}">
                 {% csrf_token %}
                 <input type="text" id="search-input" name="url" placeholder="url을 입력하세요.." value="{{ request.GET.url|default_if_none:'' }}">
                 <button id="search-button" type="submit">Search</button>
@@ -21,14 +21,66 @@
     </header>
     <main>
         <div class="search-results" id="search-results">
+            <h3>사이트에서 판단한 사이트 태그입니다</h3>
             {% if host %}
             <div class="search-result">
                 <p>"{{ host.host }}" | ({{ host.classification }}) | ({{ keywords|join:', ' }}) | (신고 후 차단)</p>
             </div>
+
+            {% endif %}
+        </div>
+
+        <div class="report-results">
+            {% if total_reports > 0 %}
+            <h3>이 도메인에 {{ total_reports }}개의 의견이 더 존재합니다.</h3>
+            {% for report in page_obj %}
+            <div class="report-result">
+                <div class="report-tag">
+                    <p><strong>태그:</strong> {{ report.tag }}</p>
+                </div>
+                <div class="report-reason">
+                    <p><strong>이유:</strong> {{ report.reason }}</p>
+                </div>
+                <div class="report-date">
+                    <p><strong>신고 날짜:</strong> {{ report.create_at|date:"Y년 n월 j일 g:i A" }}</p>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1&url={{ request.GET.url }}">&laquo; 첫 페이지</a>
+                        <a href="?page={{ page_obj.previous_page_number }}&url={{ request.GET.url }}">이전</a>
+                    {% endif %}
+
+                    <span class="current">
+                        페이지 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&url={{ request.GET.url }}">다음</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}&url={{ request.GET.url }}">마지막 페이지 &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
             {% else %}
-            <p>검색 결과가 없습니다.</p>
+            <p>신고 내역이 없습니다.</p>
             {% endif %}
         </div>
     </main>
+
+    <!-- 로딩 화면을 표시할 영역 -->
+    <div id="loading">
+        <p>Loading...</p>
+    </div>
+
+    <!-- JavaScript: 로딩 화면 제어 -->
+    <script>
+        document.getElementById('search-form').addEventListener('submit', function() {
+            var loadingScreen = document.getElementById('loading');
+            loadingScreen.style.display = 'block'; // 로딩 화면 표시
+        });
+    </script>
 </body>
 </html>
