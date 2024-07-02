@@ -15,7 +15,8 @@
     <main>
         <div class="report-form">
             <h2>URL 신고하기</h2>
-            <form id="report-form">
+            <form id="report-form" method="post" action="{% url 'submit_report' %}">
+                {% csrf_token %}
                 <label for="reported-url">신고할 URL</label>
                 <input type="text" id="reported-url" name="reported-url" placeholder="URL을 입력하세요.." required>
 
@@ -36,5 +37,26 @@
             </form>
         </div>
     </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const reportTagSelect = document.getElementById('report-tag');
+            const otherTagInput = document.getElementById('other-tag');
+
+            reportTagSelect.addEventListener('change', function() {
+                if (this.value === '기타') {
+                    otherTagInput.style.display = 'block';
+                    otherTagInput.required = true;
+                } else {
+                    otherTagInput.style.display = 'none';
+                    otherTagInput.required = false;
+                    otherTagInput.value = '';
+                }
+            });
+
+            document.getElementById('report-form').addEventListener('submit', function(event) {
+                alert("신고가 접수되었습니다. 감사합니다!");
+            });
+        });
+    </script>
 </body>
 </html>

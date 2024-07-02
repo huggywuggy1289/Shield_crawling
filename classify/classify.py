@@ -1,6 +1,6 @@
 import openai
 import logging
-from classify.models import WordCount, FullSentence, Hosts, Normal, Casino, Adult, Copyright
+from classify.models import WordCount, FullSentence, Hosts, Normal, Casino, Adult, Copyright, Etc
 from konlpy.tag import Okt
 from collections import Counter
 from asgiref.sync import sync_to_async
@@ -45,6 +45,7 @@ async def get_predefined_keywords():
         "성인사이트": await sync_to_async(list)(Adult.objects.values_list('word', flat=True)),
         "불법저작물배포사이트": await sync_to_async(list)(Copyright.objects.values_list('word', flat=True)),
         "정상": await sync_to_async(list)(Normal.objects.values_list('word', flat=True)),
+        "기타" : await sync_to_async(list)(Etc.objects.values_list('word', flat=True)),
     }
     return predefined_keywords
 
@@ -79,8 +80,9 @@ async def classify_site(top_10_keywords):
                 f"성인사이트: {predefined_keywords_sentence['성인사이트']}, "
                 f"불법저작물배포사이트: {predefined_keywords_sentence['불법저작물배포사이트']}, "
                 f"정상: {predefined_keywords_sentence['정상']}. "
-                "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘: "
-                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
+                "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘:  "
+                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3), 기타(4)"
+                "기타 같은 경우는 0번, 1번, 2번, 3번 전부 아닌 거 같을 때 그냥 기타인 '4'라고 처리해주면 돼."
                 "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼")
 
     return await classify_with_keywords(question)
@@ -114,7 +116,7 @@ async def classify_all_keywords(host):
                 f"불법저작물배포사이트: {predefined_keywords_sentence['불법저작물배포사이트']}, "
                 f"정상: {predefined_keywords_sentence['정상']}. "
                 "위 미리 정의된 카테고리별 키워드를 참고하여 웹사이트가 다음 중 어떤 종류인지 숫자로 판단해줘: "
-                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
+                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3), 기타(4) "
                 "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼")
 
     return await classify_with_keywords(question)
@@ -163,7 +165,7 @@ async def classify_summary(host):
                 "위 카테고리별들로 많이 나온 단어들을 추출해온건데, 이 요약문이 어느위치에 포함되어있는지 확인해주면 돼."
                 "특히 정상사이트랑 불법저작물배포사이트 는 구별하기 힘드니까 잘 판단해서"
                 "어떤 종류인지 숫자로 판단해주면돼"
-                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3). "
+                "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3), 기타(4) "
                 "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼"
                 )
 
@@ -239,6 +241,7 @@ async def final_classification(host):
         "성인사이트": 1,
         "불법저작물배포사이트": 2,
         "정상": 3,
+        "기타" : 4,
         -1: -1,
     }
 
@@ -274,6 +277,7 @@ async def final_classification(host):
         1: "성인사이트",
         2: "불법저작물배포사이트",
         3: "정상",
+        4: "기타",
         -1: "알 수 없음"
     }
     final_classification = classification_map.get(final_classification_number, "알 수 없음")

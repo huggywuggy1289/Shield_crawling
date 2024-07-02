@@ -15,21 +15,26 @@ document.addEventListener('DOMContentLoaded', function() {
         this.style.backgroundColor = '#0033cc'; // 버튼 밖으로 커서가 나갔을 때 원래 색상
     });
 
-    // 페이지 이동 이벤트
-    function navigateToSearchPage() {
-        const query = searchInput.value;
-        if (query) {
-            window.location.href = `searchPage.html?query=${encodeURIComponent(query)}`;
-        } else {
-            window.location.href = 'searchPage.html';
-        }
-    }
-
-    searchButton.addEventListener('click', navigateToSearchPage);
-
-    searchInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            navigateToSearchPage();
-        }
-    });
-});
+//
+//    // 페이지 이동 이벤트
+//    function navigateToSearchPage() {
+//        const query = searchInput.value;
+//        if (query) {
+//            window.location.href = `search/?url=${encodeURIComponent(query)}`;
+//        } else {
+//            window.location.href = 'search/';
+//        }
+//    }
+//
+//    searchButton.addEventListener('click', function(event) {
+//        event.preventDefault();
+//        navigateToSearchPage();
+//    });
+//
+//    searchInput.addEventListener('keydown', function(event) {
+//        if (event.key === 'Enter') {
+//            event.preventDefault();
+//            navigateToSearchPage();
+//        }
+//    });
+//});

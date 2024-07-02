@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // URL 파라미터에서 검색어를 가져와서 검색창에 채움
     const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('query');
+    const query = urlParams.get('url');
     if (query) {
         searchInput.value = decodeURIComponent(query);
         performSearch(query); // 페이지 로드 시 검색어가 있으면 검색 실행
@@ -16,17 +16,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear previous results
         searchResultsContainer.innerHTML = '';
 
-        // Simulate search results
-        const results = [
-            `"${searchTerm}"  |  (태그)  |  (키워드)  |  (신고 후 차단)`
-        ];
-
-        results.forEach(result => {
-            const resultElement = document.createElement('div');
-            resultElement.textContent = result;
-            resultElement.className = 'search-result';
-            searchResultsContainer.appendChild(resultElement);
-        });
+        // Django 뷰로부터 데이터를 가져옴
+        fetch(`/classify/get_search_results/?url=${searchTerm}`)
+            .then(response => response.json())
+            .then(data => {
+                const result = `"${data.url}" | (${data.classification}) | (${data.keywords.join(', ')}) | (신고 후 차단)`;
+                const resultElement = document.createElement('div');
+                resultElement.textContent = result;
+                resultElement.className = 'search-result';
+                searchResultsContainer.appendChild(resultElement);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
     }
 
     searchButton.addEventListener('mousedown', function() {
@@ -41,13 +43,23 @@ document.addEventListener('DOMContentLoaded', function() {
         this.style.backgroundColor = '#0033cc'; // 버튼 밖으로 커서가 나갔을 때 원래 색상
     });
 
-    searchButton.addEventListener('click', function() {
-        performSearch(searchInput.value);
+    searchButton.addEventListener('click', function(event) {
+        event.preventDefault(); // 폼 제출을 막음
+        const searchTerm = searchInput.value;
+        const url = new URL(window.location);
+        url.searchParams.set('url', searchTerm);
+        window.history.pushState({}, '', url);
+        performSearch(searchTerm);
     });
 
     searchInput.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
-            performSearch(searchInput.value);
+            event.preventDefault(); // 폼 제출을 막음
+            const searchTerm = searchInput.value;
+            const url = new URL(window.location);
+            url.searchParams.set('url', searchTerm);
+            window.history.pushState({}, '', url);
+            performSearch(searchTerm);
         }
     });
 

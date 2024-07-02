@@ -31,5 +31,18 @@ class Adult(models.Model):
 class Copyright(models.Model):
     word = models.CharField(max_length=255)
 
+
+class Etc(models.Model):
+    word = models.CharField(max_length=255)
+
 class Whitelist(models.Model):
     url = models.URLField(unique=True)
+
+
+class Final(models.Model):
+    url = models.URLField(unique = True)
+
+class ReportUrl(models.Model):
+    pass
+
+

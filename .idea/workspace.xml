@@ -5,20 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a1870c2f-e7c0-4aaf-81e6-7233a9140be3" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/classify/cron.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/static/classify/reportScripts.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/static/classify/reportStyle.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/static/classify/searchScripts.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/static/classify/searchStyle.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/classify/report.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/classify/search.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/urlcrawl/cron.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classify/classify.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/classify.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/classify/management/commands/save_keywords.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/management/commands/save_keywords.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classify/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/forms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classify/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classify/saveword.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/saveword.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classify/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classify/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/config/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/memo2.txt" beforeDir="false" afterPath="$PROJECT_DIR$/memo2.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/classify/mhScripts.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/classify/mhScripts.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/classify/searchScripts.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/classify/searchScripts.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/classify/report.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/classify/report.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/classify/search.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/classify/search.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/classify/url_form.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/classify/url_form.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

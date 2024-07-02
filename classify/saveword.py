@@ -1,5 +1,5 @@
 import logging
-from classify.models import WordCount, FullSentence, Hosts, Normal, Casino, Adult, Copyright
+from classify.models import WordCount, FullSentence, Hosts, Normal, Casino, Adult, Copyright, Etc
 from konlpy.tag import Okt
 from collections import Counter
 from asgiref.sync import sync_to_async
@@ -59,7 +59,8 @@ async def save_keywords_to_category_tables():
         "정상": Normal,
         "도박사이트": Casino,
         "성인사이트": Adult,
-        "불법저작물배포사이트": Copyright
+        "불법저작물배포사이트": Copyright,
+        "기타" : Etc,
     }
 
     for category, model in categories.items():

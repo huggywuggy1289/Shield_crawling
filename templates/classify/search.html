@@ -6,20 +6,28 @@
     <title>PageShield</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'classify/searchStyle.css' %}">
-    <script defer src="{% static 'classify/searchScripts.js' %}"></script>
 </head>
 <body>
     <header>
-        <div class="logo">PageShield</div>
+        <a href="{% url 'url_form' %}" class="logo">PageShield</a>
         <div class="search-bar">
-            <input type="text" id="search-input" placeholder="url을 입력하세요..">
-            <button id="search-button">Search</button>
-            <button class="report-button" id="report-button">url 신고하기</button>
+            <form method="post" action="{% url 'process_url' %}">
+                {% csrf_token %}
+                <input type="text" id="search-input" name="url" placeholder="url을 입력하세요.." value="{{ request.GET.url|default_if_none:'' }}">
+                <button id="search-button" type="submit">Search</button>
+            </form>
+            <button class="report-button" id="report-button" onclick="window.location.href='{% url 'report' %}'">url 신고하기</button>
         </div>
     </header>
     <main>
         <div class="search-results" id="search-results">
-            <!-- 검색 결과 -->
+            {% if host %}
+            <div class="search-result">
+                <p>"{{ host.host }}" | ({{ host.classification }}) | ({{ keywords|join:', ' }}) | (신고 후 차단)</p>
+            </div>
+            {% else %}
+            <p>검색 결과가 없습니다.</p>
+            {% endif %}
         </div>
     </main>
 </body>
