@@ -10,9 +10,9 @@
 <body>
     <div class="container">
         <h1>PageShield</h1>
-        <div class="footer-text">현재 등록된 홈페이지 : 총 000000개</div>
-        <div class="footer-text">오늘 등록된 홈페이지 : 총 000000개</div>
-        <div class="footer-text">어제 등록된 홈페이지 : 총 000000개</div>
+        <div class="footer-text">현재 등록된 홈페이지 : 총 {{ total_hosts }}개</div>
+        <div class="footer-text">오늘 등록된 홈페이지 : 총 {{ total_today }}개</div>
+        <div class="footer-text">어제 등록된 홈페이지 : 총 {{ total_yesterday }}개</div>
         <div class="search-container">
             <form method="post" action="{% url 'search' %}" id="url-form">
                 {% csrf_token %}

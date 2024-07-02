@@ -13,6 +13,8 @@ from .forms import URLForm, RegisterForm, WhitelistForm
 from .models import Hosts, WordCount, Whitelist, ReportUrl
 from classify.classify import final_classification
 from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_category_tables
+from django.core.validators import URLValidator
+from datetime import datetime, timedelta
 
 def run_spider(url):
     env = os.environ.copy()
@@ -28,8 +30,18 @@ def run_spider(url):
     process.wait()
 
 async def url_form(request):
-    form = URLForm()
-    return render(request, 'classify/url_form.html', {'form': form})
+    total_hosts = await sync_to_async(Hosts.objects.count)()
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+
+    total_today = await sync_to_async(Hosts.objects.filter(create_time__date=today).count)()
+    total_yesterday = await sync_to_async(Hosts.objects.filter(create_time__date=yesterday).count)()
+
+    return render(request, 'classify/url_form.html', {
+        'total_hosts': total_hosts,
+        'total_today': total_today,
+        'total_yesterday': total_yesterday
+    })
 
 async def search(request):
     if request.method == 'POST':
@@ -66,6 +78,14 @@ async def report(request):
         other_tag = request.POST.get('other-tag')
         report_reason = request.POST.get('report-reason')
 
+        # URL 유효성 검사
+        url_validator = URLValidator()
+        try:
+            url_validator(reported_url)
+        except ValidationError:
+            messages.error(request, "유효한 URL을 입력하세요.")
+            return render(request, 'classify/report.html')
+
         # 신고 내용 저장
         host_instance, _ = await Hosts.objects.aget_or_create(host=reported_url)
         await sync_to_async(host_instance.save)()  # 저장하여 인스턴스가 데이터베이스에 저장되도록 함
@@ -74,7 +94,8 @@ async def report(request):
         await sync_to_async(report_url.save)()
 
         # final 필드 업데이트
-        report_tags = await sync_to_async(lambda: list(ReportUrl.objects.filter(url=host_instance).values_list('tag', flat=True)))()
+        report_tags = await sync_to_async(
+            lambda: list(ReportUrl.objects.filter(url=host_instance).values_list('tag', flat=True)))()
         tags = report_tags + [host_instance.classification]
 
         most_common_tag = Counter(tags).most_common(1)[0][0]
@@ -85,9 +106,10 @@ async def report(request):
 
         await sync_to_async(host_instance.save)()
 
-        # 처리 후 search.html로 리디렉션
-        return redirect(f'/classify/search/?url={reported_url}')
+        messages.success(request, "신고가 성공적으로 접수되었습니다.")
+        return redirect('search' + f'?url={reported_url}')
     return render(request, 'classify/report.html')
+
 
 async def process_url_logic(url):
     # 화이트리스트 체크

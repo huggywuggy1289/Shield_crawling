@@ -42,14 +42,18 @@ header .search-bar input[type="text"] {
 
 header .search-bar button {
     padding: 10px 15px;
-    background-color: #dc3545;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     margin-left: 10px;
 }
-
+#search-button{
+    background-color: #c59608;
+}
+#report-button{
+    background-color: #dc3545;
+}
 main {
     flex: 1;
     padding: 20px;
@@ -74,6 +78,28 @@ main {
 
 .search-result p, .report-result p {
     margin: 0 0 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th {
+    width: 20%;
+}
+th, td {
+    padding: 8px;
+    border-left: 1px solid #ddd; /* 열 옆에 선을 추가 */
+    text-align: left; /* 텍스트를 왼쪽으로 정렬 */
+    vertical-align: top; /* 셀의 텍스트를 위쪽으로 정렬 */
+}
+th {
+    border-left: none; /* 헤더 셀에서는 열 옆 선을 제거 */
+    font-weight: bold; /* 헤더 셀에 볼드체 적용 */
+}
+ul {
+    list-style:none;
+    padding-left:0px;
 }
 
 h3 {

@@ -37,5 +37,22 @@
             </form>
         </div>
     </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const reportTagSelect = document.getElementById('report-tag');
+            const otherTagInput = document.getElementById('other-tag');
+
+            reportTagSelect.addEventListener('change', function() {
+                if (this.value === '기타') {
+                    otherTagInput.style.display = 'block';
+                    otherTagInput.required = true;
+                } else {
+                    otherTagInput.style.display = 'none';
+                    otherTagInput.required = false;
+                    otherTagInput.value = '';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

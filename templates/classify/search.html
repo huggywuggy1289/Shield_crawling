@@ -24,9 +24,29 @@
             <h3>사이트에서 판단한 사이트 태그입니다</h3>
             {% if host %}
             <div class="search-result">
-                <p>"{{ host.host }}" | ({{ host.classification }}) | ({{ keywords|join:', ' }}) | (신고 후 차단)</p>
-            </div>
+                <table>
+                    <tr>
+                        <th>Host</th>
+                        <td>{{ host.host }}</td>
+                    </tr>
+                    <tr>
+                        <th>Classification</th>
+                        <td>{{ host.classification }}</td>
+                    </tr>
+                    <tr>
+                        <th>Keyword</th>
+                        <td>
+                            <ul>
+                                {% for keyword in keywords %}
+                                <li>{{ keyword }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+                <p><strong>(신고 후 차단)</strong></p>
 
+            </div>
             {% endif %}
         </div>
 
