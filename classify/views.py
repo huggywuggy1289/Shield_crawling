@@ -1,10 +1,10 @@
+from django.core.paginator import Paginator
 import os
 import subprocess
 from collections import Counter
 from django.shortcuts import render, redirect
-from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views.generic.edit import FormView
 from django.contrib import messages
 from django.utils import timezone
@@ -13,8 +13,9 @@ from .forms import URLForm, RegisterForm, WhitelistForm
 from .models import Hosts, WordCount, Whitelist, ReportUrl
 from classify.classify import final_classification
 from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_category_tables
-from django.core.validators import URLValidator
 from datetime import datetime, timedelta
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 def run_spider(url):
     env = os.environ.copy()
@@ -107,7 +108,7 @@ async def report(request):
         await sync_to_async(host_instance.save)()
 
         messages.success(request, "신고가 성공적으로 접수되었습니다.")
-        return redirect('search' + f'?url={reported_url}')
+        return redirect(reverse('search') + f'?url={reported_url}')
     return render(request, 'classify/report.html')
 
 

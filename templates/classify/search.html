@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PageShield</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'classify/searchStyle.css' %}">
+    <link rel="stylesheet" href="{% static 'classify/searchStyle1.css' %}">
+    <link rel="stylesheet" href="{% static 'classify/searchStyle2.css' %}">
 </head>
 <body>
     <header>
@@ -34,7 +35,7 @@
                         <td>{{ host.classification }}</td>
                     </tr>
                     <tr>
-                        <th>Keyword</th>
+                        <th>Keyword Top 5</th>
                         <td>
                             <ul>
                                 {% for keyword in keywords %}

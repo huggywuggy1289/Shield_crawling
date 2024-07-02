@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'classify',
     'urlcrawl',
-    'django_crontab'
+    # 'django_crontab'
+    'django_apscheduler'
 ]
 
 MIDDLEWARE = [
@@ -135,11 +136,17 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-import os
-from datetime import datetime
+# import os
+# from datetime import datetime
+#
+# CRONJOBS = [
+#     ('0 */4 * * *', 'urlcrawl.cron.start_crawl_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_start_crawl_{datetime.now().strftime("%Y-%m-%d")}.log')),
+#     ('0 2,6,10,14,18,22 * * *', 'urlcrawl.cron.classify_urls_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_classify_urls_{datetime.now().strftime("%Y-%m-%d")}.log')),
+#     ('0 1,3,5,7,9,11,13,15,17,19,21,23 * * *', 'classify.cron.save_keywords_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_save_keywords_{datetime.now().strftime("%Y-%m-%d")}.log'))
+# ]
 
-CRONJOBS = [
-    ('0 */4 * * *', 'urlcrawl.cron.start_crawl_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_start_crawl_{datetime.now().strftime("%Y-%m-%d")}.log')),
-    ('0 2,6,10,14,18,22 * * *', 'urlcrawl.cron.classify_urls_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_classify_urls_{datetime.now().strftime("%Y-%m-%d")}.log')),
-    ('0 1,3,5,7,9,11,13,15,17,19,21,23 * * *', 'classify.cron.save_keywords_task', '>> ' + os.path.join(BASE_DIR, f'logs/cron_save_keywords_{datetime.now().strftime("%Y-%m-%d")}.log'))
-]
+
+#스케쥴러 설정
+APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+# 자동으로 스케쥴러 실행
+SCHEDULER_DEFAULT = True
