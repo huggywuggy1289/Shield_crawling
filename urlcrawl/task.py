@@ -34,9 +34,9 @@ def start():
         one_task,
         'cron',
         # second='*/10',
-        hour='4, 8, 12, 16, 20',
-        # minute='*/10',
-        # second='0',
+        hour='0, 4, 8, 12, 16, 20',
+        minute='20',
+        second='0',
         name='one_task',
         id='one_task'
     )
@@ -49,8 +49,8 @@ def start():
         'cron',
         # minute='*/1',
         hour='2, 6, 10, 14, 18, 22',
-        # minute='0',
-        # second='0',
+        minute='20',
+        second='0',
         name='two_task',
         id='two_task'
     )

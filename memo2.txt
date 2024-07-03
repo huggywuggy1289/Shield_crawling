@@ -7,6 +7,15 @@ pip install konlpy (형태소 분석)
 pip install jpype1
 pip install pytesseract (이미지분석)
 pip install scrapy-user-agents
+pip install apscheduler
+pip install validators
+
+
+우분투 테서렉트 설치
+sudo apt install tesseract-ocr libtesseract-dev libleptonica-dev
+sudo apt install tesseract-ocr-eng tesseract-ocr-kor
+
+경로 설정(classify/get_words/getwords/spiders/getwords.py 에서 설정하여야함)
 
 #윈도우 테서렉트
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -15,12 +24,28 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
 os.environ['TESSDATA_PREFIX'] = '/opt/homebrew/opt/tesseract/share/tessdata/'
 
-jvm 설정하여야함
+#우분투 테서렉트
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 
-pip install apscheduler
-pip install validators
+jvm 설치 (classify/classify.py)
+sudo apt install openjdk-11-jdk
+echo "export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> ~/.bashrc
+source ~/.bashrc
+
+if not jpype.isJVMStarted():
+    jvmpath = os.path.join(os.environ['JAVA_HOME'], 'lib/server/libjvm.so')
+    jpype.startJVM(jvmpath, convertStrings=True)
+
+이것을 classify 에서 설정(주석처리 해놓음)
 
 
+config/ 에
+secret_key.txt 하나 만들고
+값 넣어야함.
+
+classify/에
+API_KEY.txt 하나 만들고
+값 넣어야함
 
 

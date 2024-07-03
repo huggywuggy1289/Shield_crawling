@@ -32,6 +32,11 @@ if not jpype.isJVMStarted():
     jvmpath = os.path.join(os.environ['JAVA_HOME'], 'lib/jli/libjli.dylib')
     jpype.startJVM(jvmpath, "-Djava.class.path={}".format(os.environ['JAVA_HOME']), convertStrings=True)
 
+#우분투
+# if not jpype.isJVMStarted():
+#     jvmpath = os.path.join(os.environ['JAVA_HOME'], 'lib/server/libjvm.so')
+#     jpype.startJVM(jvmpath, convertStrings=True)
+
 
 # 미리 정의된 키워드를 가져오는 함수
 async def get_predefined_keywords():
