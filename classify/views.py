@@ -14,8 +14,7 @@ from .models import Hosts, WordCount, Whitelist, ReportUrl
 from classify.classify import final_classification
 from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_category_tables
 from datetime import datetime, timedelta
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
+import validators
 
 def run_spider(url):
     env = os.environ.copy()
@@ -80,12 +79,8 @@ async def report(request):
         report_reason = request.POST.get('report-reason')
 
         # URL 유효성 검사
-        url_validator = URLValidator()
-        try:
-            url_validator(reported_url)
-        except ValidationError:
-            messages.error(request, "유효한 URL을 입력하세요.")
-            return render(request, 'classify/report.html')
+        if not validators.url(reported_url):
+            return JsonResponse({"status": "error", "message": "유효한 URL을 입력해 주세요."})
 
         # 신고 내용 저장
         host_instance, _ = await Hosts.objects.aget_or_create(host=reported_url)
@@ -99,16 +94,20 @@ async def report(request):
             lambda: list(ReportUrl.objects.filter(url=host_instance).values_list('tag', flat=True)))()
         tags = report_tags + [host_instance.classification]
 
-        most_common_tag = Counter(tags).most_common(1)[0][0]
+        tag_counts = Counter(tags)
+        most_common_tag, count = tag_counts.most_common(1)[0]
+
+        # 모두 동일한 경우 또는 모든 태그가 없는 경우 처리
+        if len(tag_counts) == 1 or count == 1:
+            most_common_tag = host_instance.classification
+
         if most_common_tag in ['도박사이트', '성인사이트', '불법저작물배포사이트', '기타', '정상']:
             host_instance.final = most_common_tag
-        else:
-            host_instance.final = '기타'
 
         await sync_to_async(host_instance.save)()
 
-        messages.success(request, "신고가 성공적으로 접수되었습니다.")
-        return redirect(reverse('search') + f'?url={reported_url}')
+        # JSON 응답 반환
+        return JsonResponse({"status": "success", "message": "신고가 성공적으로 접수되었습니다.", "redirect_url": f"/classify/search/?url={reported_url}"})
     return render(request, 'classify/report.html')
 
 

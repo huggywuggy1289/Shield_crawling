@@ -36,6 +36,51 @@
                 <button type="submit">신고하기</button>
             </form>
         </div>
+        <div id="message" style="display:none;"></div>
     </main>
+
+    <script>
+        document.getElementById('report-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: form.method,
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Accept': 'application/json',
+                },
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                const messageDiv = document.getElementById('message');
+                if (data.status === 'success') {
+                    messageDiv.style.color = 'green';
+                    messageDiv.innerHTML = data.message;
+                    messageDiv.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 2000); // 2초 후 리디렉트
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.innerHTML = data.message;
+                    messageDiv.style.display = 'block';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('report-tag').addEventListener('change', function(event) {
+            const otherTagInput = document.getElementById('other-tag');
+            if (event.target.value === '기타') {
+                otherTagInput.style.display = 'block';
+            } else {
+                otherTagInput.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>

@@ -39,3 +39,7 @@ scrapy.cfg
 # Ignore virtual environment directory
 venv/
 env/
+
+
+API_KEY.txt
+secret_key.txt

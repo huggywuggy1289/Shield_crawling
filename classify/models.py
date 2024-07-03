@@ -8,6 +8,8 @@ class Hosts(models.Model):
     last_check_time = models.DateTimeField(null=True, blank=True)
     final = models.CharField(max_length=255)
 
+
+
 class WordCount(models.Model):
     host = models.ForeignKey(Hosts, on_delete=models.CASCADE)
     words = models.CharField(max_length=255)
