@@ -8,7 +8,9 @@ pip install jpype1
 pip install pytesseract (이미지분석)
 pip install scrapy-user-agents
 pip install apscheduler
+pip install django-apscheduler
 pip install validators
+pip install selenium
 
 
 우분투 테서렉트 설치

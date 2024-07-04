@@ -8,7 +8,7 @@ class UrlcrawlConfig(AppConfig):
     name = 'urlcrawl'
 
     # 자동화 사용 시 주석 해제
-    def ready(self):
-        if settings.SCHEDULER_DEFAULT:
-            from . import task
-            task.start()
+    # def ready(self):
+    #     if settings.SCHEDULER_DEFAULT:
+    #         from . import task
+    #         task.start()
