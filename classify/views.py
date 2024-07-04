@@ -10,11 +10,12 @@ from django.contrib import messages
 from django.utils import timezone
 from asgiref.sync import sync_to_async
 from .forms import URLForm, RegisterForm, WhitelistForm
-from .models import Hosts, WordCount, Whitelist, ReportUrl
+from .models import Hosts, WordCount, Whitelist, ReportUrl, FullSentence
 from classify.classify import final_classification
 from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_category_tables
 from datetime import datetime, timedelta
 import validators
+from django.db import transaction
 
 def run_spider(url):
     env = os.environ.copy()
@@ -131,6 +132,8 @@ async def process_url_logic(url):
             should_classify = True
 
     if should_classify:
+        async with transaction.async_atomic():
+            await sync_to_async(FullSentence.objects.filter(host=host_instance).delete)()
         run_spider(url)
         await analyze_and_store_full_sentence(host_instance)
         classification = await final_classification(host_instance)

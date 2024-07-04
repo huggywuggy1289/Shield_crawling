@@ -172,7 +172,7 @@ class GetwordsSpider(scrapy.Spider):
                     item = GetWordsItem()
                     item['host'] = original_url
                     item['redirect_url'] = redirected_url if redirected_url != original_url else None
-                    item['full_sentence'] = full_sentence
+                    item['full_sentence'] = full_sentence[:9000]
                     yield item
         except Exception as e:
             self.logger.error(f"Error parsing image: {e}")

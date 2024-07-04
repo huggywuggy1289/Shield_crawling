@@ -7,8 +7,9 @@
     <list default="true" id="a1870c2f-e7c0-4aaf-81e6-7233a9140be3" name="변경" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/classify/classify.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/classify.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/memo2.txt" beforeDir="false" afterPath="$PROJECT_DIR$/memo2.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/urlcrawl/task.py" beforeDir="false" afterPath="$PROJECT_DIR$/urlcrawl/task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classify/get_words/get_words/spiders/getwords.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/get_words/get_words/spiders/getwords.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classify/saveword.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/saveword.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/classify/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/classify/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/urlcrawl/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/urlcrawl/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

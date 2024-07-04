@@ -60,23 +60,34 @@ async def save_keywords_to_category_tables():
         "도박사이트": Casino,
         "성인사이트": Adult,
         "불법저작물배포사이트": Copyright,
-        "기타" : Etc,
+        "기타": Etc,
     }
 
     for category, model in categories.items():
         # 기존 단어 삭제
         await sync_to_async(model.objects.all().delete)()
 
-        words = await sync_to_async(list)(
-            WordCount.objects.filter(host__classification=category).values_list('words', flat=True)
+        # final 필드가 해당 카테고리인 경우의 단어 가져오기
+        words_from_final = await sync_to_async(list)(
+            WordCount.objects.filter(host__final=category).values_list('words', flat=True)
         )
+
+        # final 필드가 비어 있고 classification 필드가 해당 카테고리인 경우의 단어 가져오기
+        words_from_classification = await sync_to_async(list)(
+            WordCount.objects.filter(host__final__isnull=True, host__classification=category).values_list('words', flat=True)
+        )
+
+        # 두 리스트 합치기
+        words = words_from_final + words_from_classification
+
         if words:
-            most_common_words = [word for word, _ in Counter(words).most_common(230)] # 가장 많은 단어 400개 가져오기
+            most_common_words = [word for word, _ in Counter(words).most_common(230)]  # 가장 많은 단어 230개 가져오기
             remaining_words = list(set(words) - set(most_common_words))
-            random_words = random.sample(remaining_words, min(70, len(remaining_words))) # 100개 랜덤으로 가져오기
+            random_words = random.sample(remaining_words, min(70, len(remaining_words)))  # 70개 랜덤으로 가져오기
             combined_words = most_common_words + random_words
 
             for word in combined_words:
                 await sync_to_async(model.objects.create)(word=word)
 
     logger.debug("Finished saving keywords to category tables")
+

@@ -24,7 +24,7 @@ def start_crawl(request):
         # 큐 상태 로그
         logger.info(f"Hosts to crawl: {hosts}")
 
-        for host in hosts:
+        for host in hosts[:100]:
             # Scrapy 스파이더 실행 경로 설정
             scrapy_project_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'get_url')
 
@@ -46,6 +46,10 @@ async def classify_urls(request):
             Q(last_check_time__lt=timezone.now() - timedelta(days=7)) |
             Q(classification__isnull=True)
         ))
+
+        if len(hosts) >= 100:
+            hosts= hosts[:100]
+
 
         for host in hosts:
             await classify_host(host)

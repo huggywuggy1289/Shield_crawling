@@ -109,6 +109,7 @@ async def classify_all_keywords(host):
         for category, keywords in predefined_keywords.items()
     }
     keywords_sentence = ", ".join(all_keywords)
+    keywords_sentence=keywords_sentence[:8000]
     question = (f"웹사이트의 모든 키워드입니다: {keywords_sentence}. "
                 f"미리 정의된 카테고리별 키워드는 다음과 같습니다. "
                 f"도박사이트: {predefined_keywords_sentence['도박사이트']}, "
@@ -128,7 +129,7 @@ async def summarize_full_sentence(host):
     full_sentences = await sync_to_async(list)(
         FullSentence.objects.filter(host=host).values_list('full_sentence', flat=True))
 
-    combined_sentences = " ".join(full_sentences)
+    combined_sentences = " ".join(full_sentences)[:9000]
     question = f"다음 문장을 3~4문장으로 요약해줘: {combined_sentences}"
 
     # OpenAI API 호출 시 예외 처리 추가
@@ -156,7 +157,7 @@ async def classify_summary(host):
         category: ", ".join(keywords)
         for category, keywords in predefined_keywords.items()
     }
-    question = (f"다음 요약문을 기반으로 웹사이트가 어떤 종류인지 숫자로 판단해줘: {summary}. "
+    question = (f"다음 요약문을 기반으로 웹사이트가 어떤 종류인지 숫자로 판단해줘: {summary[:9000]}. "
                 f"미리 정의된 카테고리별 키워드는 다음과 같습니다. "
                 f"도박사이트: {predefined_keywords_sentence['도박사이트']}, "
                 f"성인사이트: {predefined_keywords_sentence['성인사이트']}, "
@@ -166,7 +167,8 @@ async def classify_summary(host):
                 "위 카테고리별들로 많이 나온 단어들을 추출해온건데, 이 요약문이 어느위치에 포함되어있는지 확인해주면 돼."
                 "특히 정상사이트랑 불법저작물배포사이트 는 구별하기 힘드니까 잘 판단해서"
                 "도박사이트(0), 성인사이트(1), 불법저작물배포사이트(2), 정상(3), 기타(4) "
-                "기타 같은 경우에는 정상 사이트가 아닌 거 같은데, 도박사이트, 성인사이트, 불법저작물배포사이트 전부 해당되는 거 같거나 전부 아닌 거 같으면 기타인 4를 얘기해주면 돼."
+                "일단 정상사이트인지 아닌지 부터 구분을 해본 다음에, 정상이면 '3'을 얘기하면 돼"
+                "근데 만약 정상사이트가 아닌 악성 사이트 같아? 그러면 도박사이트, 성인사이트, 불법저작물배포사이트, 기타 사이트로 구분하면 돼."
                 "부연설명은 필요없어. 도박사이트면 그냥 '0' 이런식으로만 출력해주면 돼"
                 )
 
