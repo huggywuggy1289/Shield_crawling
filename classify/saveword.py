@@ -81,9 +81,9 @@ async def save_keywords_to_category_tables():
         words = words_from_final + words_from_classification
 
         if words:
-            most_common_words = [word for word, _ in Counter(words).most_common(230)]  # 가장 많은 단어 230개 가져오기
+            most_common_words = [word for word, _ in Counter(words).most_common(400)]  # 가장 많은 단어 230개 가져오기
             remaining_words = list(set(words) - set(most_common_words))
-            random_words = random.sample(remaining_words, min(70, len(remaining_words)))  # 70개 랜덤으로 가져오기
+            random_words = random.sample(remaining_words, min(100, len(remaining_words)))  # 70개 랜덤으로 가져오기
             combined_words = most_common_words + random_words
 
             for word in combined_words:

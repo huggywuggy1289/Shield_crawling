@@ -11,6 +11,7 @@ pip install apscheduler
 pip install django-apscheduler
 pip install validators
 pip install selenium
+pip install tiktoken
 
 
 우분투 테서렉트 설치

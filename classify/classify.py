@@ -6,6 +6,8 @@ from collections import Counter
 from asgiref.sync import sync_to_async
 import jpype
 import os
+import asyncio
+import tiktoken
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -24,7 +26,6 @@ with open(API_KEY_FILE) as f:
     OPENAI_API_KEY = f.read().strip()
 
 openai.api_key = OPENAI_API_KEY
-openai.api_key = OPENAI_API_KEY
 
 # 형태소 분석기 객체 생성
 okt = Okt()
@@ -32,11 +33,27 @@ if not jpype.isJVMStarted():
     jvmpath = os.path.join(os.environ['JAVA_HOME'], 'lib/jli/libjli.dylib')
     jpype.startJVM(jvmpath, "-Djava.class.path={}".format(os.environ['JAVA_HOME']), convertStrings=True)
 
-#우분투
+# 우분투
 # if not jpype.isJVMStarted():
 #     jvmpath = os.path.join(os.environ['JAVA_HOME'], 'lib/server/libjvm.so')
 #     jpype.startJVM(jvmpath, convertStrings=True)
 
+# 토큰 수 계산 함수
+def count_tokens(text, model="gpt-3.5-turbo"):
+    encoding = tiktoken.encoding_for_model(model)
+    tokens = encoding.encode(text)
+    return len(tokens)
+
+# 텍스트 길이 제한 함수
+def truncate_text_by_token_limit(text, max_tokens=10000, model="gpt-3.5-turbo"):
+    tokens = count_tokens(text, model)
+    if tokens <= max_tokens:
+        return text
+
+    encoding = tiktoken.encoding_for_model(model)
+    truncated_tokens = encoding.encode(text)[:max_tokens]
+    truncated_text = encoding.decode(truncated_tokens)
+    return truncated_text
 
 # 미리 정의된 키워드를 가져오는 함수
 async def get_predefined_keywords():
@@ -46,46 +63,39 @@ async def get_predefined_keywords():
         "성인사이트": await sync_to_async(list)(Adult.objects.values_list('word', flat=True)),
         "불법저작물배포사이트": await sync_to_async(list)(Copyright.objects.values_list('word', flat=True)),
         "정상": await sync_to_async(list)(Normal.objects.values_list('word', flat=True)),
-        "기타" : await sync_to_async(list)(Etc.objects.values_list('word', flat=True)),
+        "기타": await sync_to_async(list)(Etc.objects.values_list('word', flat=True)),
     }
     return predefined_keywords
-
-# GPT 문자 길이가 너무 길 경우 대비
-def tokenize_text(text):
-    tokens = text.split()  # 공백을 기준으로 텍스트를 나누어 리스트로 만듦
-    return tokens
-
-def truncate_text_by_token_limit(text, max_tokens=12000):
-    tokens = tokenize_text(text)
-    if len(tokens) <= max_tokens:
-        return text  # 토큰 개수가 제한 이내이면 원본 텍스트 반환
-
-    truncated_tokens = tokens[:max_tokens]  # 토큰 개수가 제한을 초과할 경우 일부 토큰만 남기기
-    truncated_text = ' '.join(truncated_tokens)  # 잘린 토큰을 다시 문자열로 합치기
-    return truncated_text
 
 # 숫자로 응답받기 위한 함수
 async def classify_with_keywords(qa):
     question = truncate_text_by_token_limit(qa)
-    try:
-        response = await sync_to_async(openai.ChatCompletion.create)(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": question}
-            ]
-        )
-        # 문자열로 출력될 경우 코드 대비
-        classification = response.choices[0].message['content'].strip()
-        if not classification.isdigit():
-            numbers = [int(num) for num in classification if num.isdigit()]
-            classification = int(''.join(map(str, numbers)))
+    while True:
+        try:
+            response = await sync_to_async(openai.ChatCompletion.create)(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "user", "content": question}
+                ]
+            )
+            classification = response.choices[0].message['content'].strip()
+            # 문자열로 출력될 경우 코드 대비
+            if not classification.isdigit():
+                numbers = [int(num) for num in classification if num.isdigit()]
+                if numbers:
+                    classification = int(''.join(map(str, numbers)))
+                else:
+                    classification = -1  # 기본값
 
-        logger.debug(f"Received classification: {classification}")
-        return classification
+            logger.debug(f"Received classification: {classification}")
+            return classification
 
-    except openai.error.APIError as e:
-        logger.error(f"OpenAI API error: {e}")
-        return "-1"
+        except openai.error.RateLimitError as e:
+            logger.error(f"Rate limit error: {e}. Retrying in 2 seconds.")
+            await asyncio.sleep(2)
+        except openai.error.APIError as e:
+            logger.error(f"OpenAI API error: {e}")
+            return -1
 
 # 모든 키워드를 가져오는 함수
 async def get_all_keywords(host):
@@ -109,7 +119,7 @@ async def classify_all_keywords(host):
         for category, keywords in predefined_keywords.items()
     }
     keywords_sentence = ", ".join(all_keywords)
-    keywords_sentence=keywords_sentence[:8000]
+    keywords_sentence = truncate_text_by_token_limit(keywords_sentence, 8000)
     question = (f"웹사이트의 모든 키워드입니다: {keywords_sentence}. "
                 f"미리 정의된 카테고리별 키워드는 다음과 같습니다. "
                 f"도박사이트: {predefined_keywords_sentence['도박사이트']}, "
@@ -132,7 +142,7 @@ async def summarize_full_sentence(host):
     full_sentences = await sync_to_async(list)(
         FullSentence.objects.filter(host=host).values_list('full_sentence', flat=True))
 
-    combined_sentences = " ".join(full_sentences)[:9000]
+    combined_sentences = truncate_text_by_token_limit(" ".join(full_sentences), 8000)
     question = f"다음 문장을 3~4문장으로 요약해줘: {combined_sentences}"
 
     # OpenAI API 호출 시 예외 처리 추가
@@ -150,7 +160,6 @@ async def summarize_full_sentence(host):
         logger.error(f"OpenAI API error: {e}")
         return "알 수 없음"
 
-
 # 요약문을 사용하여 사이트 분류
 async def classify_summary(host):
     logger.debug(f"Classifying site using summary for host: {host}")
@@ -160,7 +169,7 @@ async def classify_summary(host):
         category: ", ".join(keywords)
         for category, keywords in predefined_keywords.items()
     }
-    question = (f"다음 요약문을 기반으로 웹사이트가 어떤 종류인지 숫자로 판단해줘: {summary[:9000]}. "
+    question = (f"다음 요약문을 기반으로 웹사이트가 어떤 종류인지 숫자로 판단해줘: {summary}. "
                 f"미리 정의된 카테고리별 키워드는 다음과 같습니다. "
                 f"도박사이트: {predefined_keywords_sentence['도박사이트']}, "
                 f"성인사이트: {predefined_keywords_sentence['성인사이트']}, "
@@ -211,18 +220,16 @@ async def check_similarity_with_predefined(host):
         "성인사이트": 1,
         "불법저작물배포사이트": 2,
         "정상": 3,
-        "기타" : 4,
+        "기타": 4,
         -1: -1,
     }
 
     return [similarity_classification_map.get(category) for category in most_similar_categories]
 
-
 # 최종 분류를 결정하는 함수
 async def final_classification(host):
     logger.debug(f"Starting final classification for host: {host}")
     classifications = []
-
 
     # 모든 단어 기반 분류
     all_keywords_classification = await classify_all_keywords(host)
@@ -241,7 +248,6 @@ async def final_classification(host):
     logger.debug(f"Similarity classification: {similarity_classification}")
     classifications.extend(similarity_classification)
 
-
     # 유사도 분류 결과를 제외한 다른 분류 결과는 이미 숫자 형태이므로 그대로 사용
     filtered_classifications = []
     for c in classifications:
@@ -254,13 +260,8 @@ async def final_classification(host):
 
     if not filtered_classifications:
         final_classification_number = -1
-
     else:
         final_classification_number = Counter(filtered_classifications).most_common(1)[0][0]
-
-
-    # if -1 in classifications:
-    #     final_classification_number = -1
 
     classification_map = {
         0: "도박사이트",
