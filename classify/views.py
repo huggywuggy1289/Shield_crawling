@@ -132,23 +132,16 @@ async def process_url_logic(url):
             should_classify = True
 
     if should_classify:
-        # 비동기 코드에서 동기 트랜잭션 사용
-        await sync_to_async(transaction.atomic().__enter__)()
-        try:
-            await sync_to_async(FullSentence.objects.filter(host=host_instance).delete)()
-            run_spider(url)
-            await analyze_and_store_full_sentence(host_instance)
-            classification = await final_classification(host_instance)
-            host_instance.classification = classification
-            host_instance.last_check_time = timezone.now()
-            redirect_url = await sync_to_async(get_redirect_url)(host_instance.host)
-            if redirect_url:
-                host_instance.redirect = redirect_url
-            await sync_to_async(host_instance.save)()
-            await sync_to_async(transaction.atomic().__exit__)(None, None, None)
-        except Exception as e:
-            await sync_to_async(transaction.atomic().__exit__)(type(e), e, e.__traceback__)
-            raise
+        await sync_to_async(FullSentence.objects.filter(host=host_instance).delete)()
+        run_spider(url)
+        await analyze_and_store_full_sentence(host_instance)
+        classification = await final_classification(host_instance)
+        host_instance.classification = classification
+        host_instance.last_check_time = timezone.now()
+        redirect_url = await sync_to_async(get_redirect_url)(host_instance.host)
+        if redirect_url:
+            host_instance.redirect = redirect_url
+        await sync_to_async(host_instance.save)()
     else:
         classification = host_instance.classification
 
