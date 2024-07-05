@@ -34,7 +34,6 @@ db.sqlite3
 media
 
 # Scrapy specific ignores
-scrapy.cfg
 
 # Ignore virtual environment directory
 venv/

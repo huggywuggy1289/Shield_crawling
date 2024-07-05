@@ -1,42 +1,42 @@
-from django.shortcuts import render, redirect
-from classify.models import Hosts
-import subprocess
 import os
-import json
-from collections import deque
-from django.db.models import Q
+import subprocess
 import logging
+from django.shortcuts import render
+from django.db.models import Q
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 from datetime import timedelta
+from classify.models import Hosts
 from classify.saveword import analyze_and_store_full_sentence, save_keywords_to_category_tables
 from classify.classify import final_classification
-import asyncio
+import random
+
 
 logger = logging.getLogger(__name__)
-
 
 def start_crawl(request):
     if request.method == 'POST':
         # classification이 NULL이거나 '정상'이 아닌 호스트들 가져오기
-        hosts = Hosts.objects.filter(Q(classification__isnull=True) | ~Q(classification='정상') | ~Q(classification="알 수 없음"))
+        hosts = list(Hosts.objects.filter(Q(classification__isnull=True) | ~Q(classification='정상') | ~Q(classification="알 수 없음")))
+
+        if len(hosts) > 100:
+            hosts = random.sample(hosts, 100)
 
         # 큐 상태 로그
         logger.info(f"Hosts to crawl: {hosts}")
+        # Scrapy 스파이더 실행 경로 설정
+        scrapy_project_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'get_url')
 
-        for host in hosts[:100]:
-            # Scrapy 스파이더 실행 경로 설정
-            scrapy_project_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'get_url')
-
+        for host in hosts:
             # start_url을 인자로 Scrapy 스파이더 실행
-            subprocess.Popen(['scrapy', 'crawl', 'geturls', '-a', f'start_url={host.host}'], cwd=scrapy_project_path)
+            process = subprocess.Popen(['scrapy', 'crawl', 'geturls', '-a', f'start_url={host.host}'], cwd=scrapy_project_path)
+
+            try:
+                process.wait()  # Scrapy 스파이더 실행이 완료될 때까지 대기
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Scrapy process failed with error: {e}")
 
     return render(request, 'urlcrawl/crawl_url.html')
-
-
-def success(request):
-    return render(request, 'urlcrawl/success.html')
-
 
 async def classify_urls(request):
     if request.method == 'POST':
@@ -48,8 +48,7 @@ async def classify_urls(request):
         ))
 
         if len(hosts) >= 100:
-            hosts= hosts[:100]
-
+            hosts = hosts[:100]
 
         for host in hosts:
             await classify_host(host)
@@ -57,7 +56,6 @@ async def classify_urls(request):
         await save_keywords_to_category_tables()
 
     return render(request, 'urlcrawl/crawl_url.html')
-
 
 async def classify_host(host_instance):
     url = host_instance.host
@@ -83,8 +81,6 @@ async def classify_host(host_instance):
             host_instance.redirect = redirect_url
         await sync_to_async(host_instance.save)()
 
-# 기존 run_spider 함수는 그대로 유지
-
 def run_spider(url):
     env = os.environ.copy()
     env['DJANGO_SETTINGS_MODULE'] = 'config.settings'
@@ -94,11 +90,12 @@ def run_spider(url):
     if not os.path.exists(scrapy_project_path):
         raise FileNotFoundError(f"Scrapy project path does not exist: {scrapy_project_path}")
 
-    process = subprocess.Popen(['scrapy', 'crawl', 'getwords', '-a', f'start_url={url}'],
-                               cwd=scrapy_project_path,
-                               env=env)
-    process.wait()
+    process = subprocess.Popen(['scrapy', 'crawl', 'getwords', '-a', f'start_url={url}'], cwd=scrapy_project_path, env=env)
 
+    try:
+        process.wait()  # Scrapy 스파이더 실행이 완료될 때까지 대기
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Scrapy process failed with error: {e}")
 
 def get_redirect_url(host):
     # 이 함수는 host에 해당하는 리다이렉트 URL을 반환하는 함수입니다.
@@ -109,6 +106,3 @@ def get_redirect_url(host):
         return host_instance.redirect
     except Hosts.DoesNotExist:
         return None
-
-
-
