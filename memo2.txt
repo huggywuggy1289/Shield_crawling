@@ -21,7 +21,7 @@ sudo apt install tesseract-ocr-eng tesseract-ocr-kor
 경로 설정(classify/get_words/getwords/spiders/getwords.py 에서 설정하여야함)
 
 #윈도우 테서렉트
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = "C:\\Users\\손재윤\\OneDrive\\바탕 화면\\tesseract-5.4.1\\tesseract.exe"
 
 #맥북 테서렉트
 pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'

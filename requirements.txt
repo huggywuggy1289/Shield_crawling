@@ -1,0 +1,12 @@
+django
+scrapy
+openai==0.28
+konlpy
+jpype1
+pytesseract
+scrapy-user-agents
+apscheduler
+django-apscheduler
+validators
+selenium
+tiktoken
